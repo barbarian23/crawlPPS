@@ -1,8 +1,70 @@
+<!DOCTYPE html>
 <html>
+
 <head>
-    <title>Document</title>
+    <meta charset="UTF-8">
+    <title>Tra cứu tài khoản</title>
+    <link rel="stylesheet" href="assets/style.css">
 </head>
+
 <body>
+    <div class="div-login" id="div_login">
+        <div class="div-login-username-password">
+            <div class="div-login-username-password-upper">
+                <span>Tên đăng nhập</span>
+            </div>
+            <div class="div-login-username-password-below">
+                <input type="text" id="username" placeholder="Nhập vào tên đăng nhập">
+            </div>
+        </div>
+
+        <div class="div-login-username-password">
+            <div class="div-login-username-password-upper">
+                <span>Mật khẩu</span>
+            </div>
+            <div class="div-login-username-password-below">
+                <input type="password" id="password" placeholder="Nhập vào mật khẩu">
+            </div>
+        </div>
+
+        <div class="div-login-button-submit" onclick="submit()">
+            <span>Đăng nhập</span>
+        </div>
+        <h4 id="error_text">123</h4>
+    </div>
+
+    <div class="div-login" id="div-login-success">
+        <div class="div-login-success-contain">
+            <h2 id="success_login_text">Đăng nhập thành công ...</h2>
+        </div>
+    </div>
+
+    <div class="div-login" id="div-craw">
+        <div id="div-login-file-input" onclick="openFile()">
+            <img id="img_file_input" src='./assets/icons/file.png'>
+            <span id="span_file_input_success"></span>
+            <span id="span_file_input_error"></span>
+        </div>
+        <div class="div-login-crawl">
+            <div class="div-login-number-delay" id="div_delay_time">
+                <span>Thời gian nghỉ</span> <input type="number" id="second_crawl" max="60" min="10"
+                    value="10"><span>giây</span>
+            </div>
+            <div class="div-login-button-submit" id="btn_crawl" onclick="crawl()">
+                <span>Tra cứu thông tin</span>
+            </div>
+            <div class="div-login-loading" id="div_login_loading"></div>
+            <div class="div-progress-bar" id="div_progress_bar">
+                <div id="div_grey"></div>
+            </div>
+            <h4 id="success_text"></h4>
+            <h4 id="error_crawl"></h4>
+        </div>
+    </div>
+
     
+</html>
+<script src="index.js"></script>
 </body>
+
 </html>
