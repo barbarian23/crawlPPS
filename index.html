@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Tra cứu thông tin</title>
+    <title>Thông tin thuê bao PPS</title>
     <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 
@@ -33,8 +33,13 @@
         </div>
 
         <!-- loading bar -->
-        <div class="crawl-login-otp-progressbar" id="crawl_login_progress_bar">
-
+        <div class="crawl-login-loading" id="crawl_login_progress_bar">
+            <div class="circle"></div>
+            <div class="circle"></div>
+            <div class="circle"></div>
+            <div class="shadow"></div>
+            <div class="shadow"></div>
+            <div class="shadow"></div>
         </div>
 
         <h4 id="crawl_login_error_text">123</h4>
@@ -63,7 +68,14 @@
             <div class="crawl-login-button-submit" id="btn_crawl" onclick="crawl()">
                 <span>Tra cứu thông tin</span>
             </div>
-            <div class="crawl-login-loading" id="div_login_loading"></div>
+            <div class="crawl-login-loading" id="div_login_loading">
+                <div class="circle"></div>
+                <div class="circle"></div>
+                <div class="circle"></div>
+                <div class="shadow"></div>
+                <div class="shadow"></div>
+                <div class="shadow"></div>
+            </div>
             <div class="div-progress-bar" id="div_progress_bar">
                 <div id="div_grey"></div>
             </div>
