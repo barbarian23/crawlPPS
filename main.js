@@ -45,7 +45,6 @@ var ERROR = "Server Error in '/' Application.";
 var threshHoldeCount = 7;
 const crawlCommand = {
     login: "crawl:login",
-    otp: "crawl:otp",
     openFile: "crawl:openFile",
     wrongPhoneNumber: "crawl:incorrect_number",
     hideBTN: "crawl:hideBTN",
@@ -74,35 +73,7 @@ var canWrite = true, isFound = true;
 var mCheckTrue = "Mở", mCheckFalse = "Đóng";
 var xlStyleError;
 var currentData = [
-    // "STT":"",
-    // "Số thuê bao":"",
-    // "MSIN":"",
-    // "Loại thuê bao":"",
-    // "Gọi đi":"",
-    // "Gọi đến":"",
-    // "Loại SIM":"",
-    // "Hạng hội viên":"",
-    // "Tỉnh":"",
-    // "Ngày KH":"",
-    // "Mã KH":"",
-    // "Mã CQ",
-    // "Tên thuê bao":"",
-    // "Ngày sinh":"",
-    // "Số GT":"",
-    // "Ngày cấp",
-    // "Số PIN/PUK",
-    // "Số PIN2/PUK2",
-    // "Đối tượng",
-    // "Địa chỉ chứng từ",
-    // "Địa chỉ thanh toán",
-    // "Địa chỉ thường trú",
-    // "Tài khoản chính",
-    // "Hạn sử dụng",
-    // "Thuê bao trả trước được tham gia khuyến mại",
-    // "Gói cước trả trước ưu tiên mời KH đăng ký",
-    // //dịch vụ 3G
-    // //dịch vụ 1
-    // "service":[]
+
 ]
 
 var page, pageLogin;
@@ -253,98 +224,47 @@ async function prepareExxcel(callback) {
 
     wb = new xl.Workbook();
     ws = wb.addWorksheet("Tra cuu");
-
     ws.column(1).setWidth(5);//STT
-    ws.column(2).setWidth(15);//Số thuê bao
-    ws.column(3).setWidth(15);//MSIN
-    ws.column(4).setWidth(15);//Loại thuê bao
-    ws.column(5).setWidth(7);//Gọi đi
-    ws.column(6).setWidth(10);//Gọi đến
-    ws.column(7).setWidth(11);//Loại SIM
-    ws.column(8).setWidth(25);//Hạng hội viên
-    ws.column(9).setWidth(10);//Tỉnh
-    ws.column(10).setWidth(15);//Ngày KH
-    ws.column(11).setWidth(10);//Mã KH
-    ws.column(12).setWidth(10);//Mã CQ
-    ws.column(13).setWidth(30);//Tên thuê bao
-    ws.column(14).setWidth(15);//Ngày sinh
-    ws.column(15).setWidth(15);//Số GT
-    ws.column(16).setWidth(15);//Ngày cấp
-    ws.column(17).setWidth(17);//Số PIN/PUK
-    ws.column(18).setWidth(17);//Số PIN2/PUK2
-    ws.column(19).setWidth(16);//Đối tượng
-    ws.column(20).setWidth(20);//Địa chỉ chứng từ
-    ws.column(21).setWidth(25);//Địa chỉ thanh toán
-    ws.column(22).setWidth(65);//Địa chỉ thường trú
-    ws.column(23).setWidth(16);//Tài khoản chính
-    ws.column(24).setWidth(15);//Hạn sử dụng
-    ws.column(25).setWidth(65);//Thuê bao trả trước được tham gia khuyến mại
-    ws.column(26).setWidth(65);//Gói cước trả trước ưu tiên mời KH đăng ký
 
-    //dịch vụ 3G
-    //dịch vụ 1
-    ws.column(27).setWidth(17);//Mã DV1
-    ws.column(28).setWidth(30);//Gói 3g 1
-    ws.column(29).setWidth(25);//Ngày bắt đầu dịch vụ 1
-    ws.column(30).setWidth(25);//Ngày kết thúc dịch vụ 1
-    ws.column(31).setWidth(10);//Gia hạn 1
+    //Thông tin thuê bao
+    ws.column(2).setWidth(15);//Số thuê bao,
+    ws.column(3).setWidth(15);//Lớp dịch vụ,
+    ws.column(4).setWidth(15);//  Tài khoản chính,
+    ws.column(5).setWidth(10);//  Tài khoản KM,
+    ws.column(6).setWidth(10);//  Tài khoản KM1,
+    ws.column(7).setWidth(10);//  Tài khoản KM2,
+    ws.column(8).setWidth(10);// Tài khoản KM3,
+    ws.column(9).setWidth(10);//  Tài khoản DK1,
+    ws.column(10).setWidth(10);//  Tài khoản DK2,
+    ws.column(11).setWidth(5);//  Trạng thái hiện tại,
+    ws.column(12).setWidth(5);//   Trạng thái trước,
+    ws.column(13).setWidth(20);//   Ngày hết hạn (yyyy-mm-dd),
+    ws.column(14).setWidth(20);//   Ngày tạo thuê bao (yyyy-mm-dd),
+    ws.column(15).setWidth(20);//   Ngày kích hoạt (yyyy-mm-dd),
+    ws.column(16).setWidth(15);//   ACC ALO,
+    ws.column(17).setWidth(15);//  Ala carte,
+    ws.column(18).setWidth(35);//  Các gói KM được tham gia (09/2020),
 
-    //dịch vụ 2
-    ws.column(32).setWidth(17);//Mã DV2
-    ws.column(33).setWidth(30);//Gói 3g 2
-    ws.column(34).setWidth(25);//Ngày bắt đầu dịch vụ 2
-    ws.column(35).setWidth(25);//Ngày kết thúc dịch vụ 2
-    ws.column(36).setWidth(10);//Gia hạn 2
+    //Khuyến mãi
+    ws.column(19).setWidth(15);//  MSISDN,
+    ws.column(20).setWidth(25);//  Thời gian thực hiện giao dịch,
+    ws.column(21).setWidth(10);//  Loại dịch vụ,
+    ws.column(22).setWidth(10);// Bản tin đến,
+    ws.column(23).setWidth(15);//  Bản tin phản hồi,
+    ws.column(24).setWidth(15);//  Loại giao dịch,
+    ws.column(25).setWidth(15);// A La Carte,
+    ws.column(26).setWidth(20);// Ngày bắt đầu gói cước,
+    ws.column(27).setWidth(20);// Ngày kết thsuc gói cước,
+    ws.column(28).setWidth(15);// Trạng thái,
+    ws.column(29).setWidth(20);// Lý do,
+    ws.column(3).setWidth(25);// Chi tiết,
 
-    //dịch vụ 3
-    ws.column(37).setWidth(17);//Mã DV3
-    ws.column(38).setWidth(30);//Gói 3g 3
-    ws.column(39).setWidth(25);//Ngày bắt đầu dịch vụ 3
-    ws.column(40).setWidth(25);//Ngày kết thúc dịch vụ 3
-    ws.column(41).setWidth(10);//Gia hạn 3
-
-    //Dịch vụ GPRS
-    ws.column(42).setWidth(25);//"Mã dịch vụ dvgprs",
-    ws.column(43).setWidth(30);//"Ngày thực hiện dịch vụ dvgprs",
-    ws.column(44).setWidth(25);//"Thao tác dvgprs",
-    ws.column(45).setWidth(25);//"Ghi chú dvgprs",
-    ws.column(46).setWidth(20);//"Người dùng dvgprs",
-
-    //Dịch vụ IC
-    ws.column(47).setWidth(25);//"Mã dịch vụ dvic",
-    ws.column(48).setWidth(30);//"Ngày thực hiện dịch vụ dvic",
-    ws.column(49).setWidth(25);//"Thao tác dvic",
-    ws.column(50).setWidth(25);//"Ghi chú dvic",
-    ws.column(51).setWidth(20);//"Người dùng dvic",
-
-    //Dịch vụ OC
-    ws.column(52).setWidth(25);//"Mã dịch vụ dvoc",
-    ws.column(53).setWidth(30);//"Ngày thực hiện dịch vụ dvoc",
-    ws.column(54).setWidth(25);//"Thao tác dvoc",
-    ws.column(55).setWidth(25);//"Ghi chú dvoc",
-    ws.column(56).setWidth(20);//"Người dùng dvoc",
-
-    //Dịch vụ CAN
-    ws.column(57).setWidth(25);//"Mã dịch vụ dvcan",
-    ws.column(58).setWidth(30);//"Ngày thực hiện dịch vụ dvcan",
-    ws.column(59).setWidth(25);//"Thao tác dvcan",
-    ws.column(60).setWidth(25);//"Ghi chú dvcan",
-    ws.column(61).setWidth(20);//"Người dùng dvcan",
-
-
-    //lịch sử nạp thẻ 1
-    ws.column(62).setWidth(15);//"Mệnh giá 1",
-    ws.column(63).setWidth(30);//"Ngày nạp 1",
-    ws.column(64).setWidth(15);//"Phương thức nạp 1",
-    ws.column(65).setWidth(25);//"TK trước khi nạp 1",
-    ws.column(66).setWidth(25);//"TK sau khi nạp 1",
-
-    //lịch sử nạp thẻ 2
-    ws.column(67).setWidth(15);//"Mệnh giá 2",
-    ws.column(68).setWidth(15);// "Ngày nạp 2",
-    ws.column(69).setWidth(15);//"Phương thức nạp 2",
-    ws.column(70).setWidth(25);//"TK trước khi nạp 2",
-    ws.column(71).setWidth(25);//"TK sau khi nạp 2",
+    //Dịch vụ
+    ws.column(31).setWidth(15);// Số thuê bao,
+    ws.column(32).setWidth(15);// Gói cước,
+    ws.column(33).setWidth(20);// Ngày bắt đầu,
+    ws.column(34).setWidth(20);// Ngày kết thúc,
+    ws.column(35).setWidth(20);// Ngày thay đổi gần nhất,
 
     xlStyleSmall = wb.createStyle({
         alignment: {
@@ -403,94 +323,45 @@ async function prepareExxcel(callback) {
 
     let header = [
         "STT",
+        //Thông tin thuê bao
         "Số thuê bao",
-        "MSIN",
-        "Loại thuê bao",
-        "Gọi đi",
-        "Gọi đến",
-        "Loại SIM",
-        "Hạng hội viên",
-        "Tỉnh",
-        "Ngày KH",
-        "Mã KH",
-        "Mã CQ",
-        "Tên thuê bao",
-        "Ngày sinh",
-        "Số GT",
-        "Ngày cấp",
-        "Số PIN/PUK",
-        "Số PIN2/PUK2",
-        "Đối tượng",
-        "Địa chỉ chứng từ",
-        "Địa chỉ thanh toán",
-        "Địa chỉ thường trú",
+        "Lớp dịch vụ",
         "Tài khoản chính",
-        "Hạn sử dụng",
-        "Thuê bao trả trước được tham gia khuyến mại",
-        "Gói cước trả trước ưu tiên mời KH đăng ký",
-        //dịch vụ 3G
-        //dịch vụ 1
-        "Mã DV1",
-        "Gói 3g 1",
-        "Ngày bắt đầu dịch vụ 1",
-        "Ngày kết thúc dịch vụ 1",
-        "Gia hạn 1",
+        "Tài khoản KM",
+        "Tài khoản KM1",
+        "Tài khoản KM2",
+        "Tài khoản KM3",
+        "Tài khoản DK1",
+        "Tài khoản DK2",
+        "Trạng thái hiện tại",
+        "Trạng thái trước",
+        "Ngày hết hạn (yyyy-mm-dd)",
+        "Ngày tạo thuê bao (yyyy-mm-dd)",
+        "Ngày kích hoạt (yyyy-mm-dd)",
+        "ACC ALO",
+        "Ala carte",
+        "Các gói KM được tham gia (09/2020)",
 
-        //dịch vụ 2
-        "Mã DV2",
-        "Gói 3g 2",
-        "Ngày bắt đầu dịch vụ 2",
-        "Ngày kết thúc dịch vụ 2",
-        "Gia hạn 2",
+        //Khuyến mãi
+        "MSISDN",
+        "Thời gian thực hiện giao dịch",
+        "Loại dịch vụ",
+        "Bản tin đến",
+        "Bản tin phản hồi",
+        "Loại giao dịch",
+        "A La Carte",
+        "Ngày bắt đầu gói cước",
+        "Ngày kết thsuc gói cước",
+        "Trạng thái",
+        "Lý do",
+        "Chi tiết",
 
-        //dịch vụ 3
-        "Mã DV3",
-        "Gói 3g 3",
-        "Ngày bắt đầu dịch vụ 3",
-        "Ngày kết thúc dịch vụ 3",
-        "Gia hạn 3",
-
-        //Dịch vụ GPRS
-        "Mã dịch vụ dvgprs",
-        "Ngày thực hiện dịch vụ dvgprs",
-        "Thao tác dvgprs",
-        "Ghi chú dvgprs",
-        "Người dùng dvgprs",
-
-        //Dịch vụ IC
-        "Mã dịch vụ dvic",
-        "Ngày thực hiện dịch vụ dvic",
-        "Thao tác dvic",
-        "Ghi chú dvic",
-        "Người dùng dvic",
-
-        //Dịch vụ OC
-        "Mã dịch vụ dvoc",
-        "Ngày thực hiện dịch vụ dvoc",
-        "Thao tác dvoc",
-        "Ghi chú dvoc",
-        "Người dùng dvoc",
-
-        //Dịch vụ CAN
-        "Mã dịch vụ dvcan",
-        "Ngày thực hiện dịch vụ dvcan",
-        "Thao tác dvcan",
-        "Ghi chú dvcan",
-        "Người dùng dvcan",
-
-        //lịch sử nạp thẻ 1
-        "Mệnh giá 1",
-        "Ngày nạp 1",
-        "Phương thức nạp 1",
-        "TK trước khi nạp 1",
-        "TK sau khi nạp 1",
-
-        //lịch sử nạp thẻ 2
-        "Mệnh giá 2",
-        "Ngày nạp 2",
-        "Phương thức nạp 2",
-        "TK trước khi nạp 2",
-        "TK sau khi nạp 2",
+        //dịch vụ
+        "Số thuê bao",
+        "Gói cước",
+        "Ngày bắt đầu",
+        "Ngày kết thúc",
+        "Ngày thay đổi gần nhất",
     ];
 
     for (let i = 0; i < header.length; i++) {
@@ -647,7 +518,7 @@ function doLogin(_username, _password) {
         await mainWindow.webContents.send(crawlCommand.loginSuccess, 2);
         await mainWindow.webContents.send(crawlCommand.log, 'doLogin');
 
-        await pageLogin.goto(URL.LOGIN);//, { waitUntil: 'networkidle0' });
+
 
         pageLogin.setViewport({ width: 2600, height: 3800 });
 
@@ -655,61 +526,13 @@ function doLogin(_username, _password) {
         //hầu hết các lỗi dialog, -> đóng trình duệt
         //dialog số không hợp lệ(sai định dang số, số quá ngắn, quá dài hoặc otp bị sai), không đóng google
         pageLogin.on('dialog', async dialog => {
-
             let mssg = dialog.message();
-
-            // await pageLogin.evaluate(({ mssg }) => {
-
-            //     console.log('puppeteer alert wwith: ', mssg);
-
-            // }, { mssg });
-
-            console.log('puppeteer alert wwith: ', mssg);
-            await mainWindow.webContents.send(crawlCommand.log, 'puppeteer alert with: ' + mssg);
-            //await mainWindow.webContents.send('crawl:incorrect_number', inputPhoneNumberArray[cIII]);
-            if (dialog.message() == wrongLogin) {
-                await mainWindow.webContents.send(crawlCommand.log, 'wrongLogin');
-                await mainWindow.webContents.send(crawlCommand.loginSuccess, 0);
-                await browser.close();
-                concurentLogin = null;
-            } else if (dialog.message() == wrongPassword) {
-                await mainWindow.webContents.send(crawlCommand.log, 'wrongPassword');
-                await mainWindow.webContents.send(crawlCommand.loginSuccess, -2);
-                await browser.close();
-                concurentLogin = null;
-            } else if (dialog.message() == lackPassword) {
-                await mainWindow.webContents.send(crawlCommand.log, 'lackPassword');
-                await mainWindow.webContents.send(crawlCommand.loginSuccess, -3);
-                await browser.close();
-                concurentLogin = null;
-            } else if (dialog.message() == wrongOTP) {
-                await mainWindow.webContents.send(crawlCommand.otp, 0);
-                await mainWindow.webContents.send(crawlCommand.log, 'wrongOTP');
-            } else if (dialog.message() == timoutOTP) {
-                //phiên kiểm tra hết hạn, đóng trình duyệt mở lại login
-                await mainWindow.webContents.send(crawlCommand.otp, -2);
-                await mainWindow.webContents.send(crawlCommand.log, 'timoutOTP');
-                await browser.close();
-                concurentLogin = null;
-            }
-            //phần crawl dữ liệu, có dialog số điện thoại không hợp lệ(số dài hơn hoặc ngắn hơn quy định)
-            else if (dialog.message() == wrongPhoneNumber) {
-                await mainWindow.webContents.send(crawlCommand.wrongPhoneNumber, inputPhoneNumberArray[curentIndex]);
-                await mainWindow.webContents.send(crawlCommand.signalWrite, -1);
-                await mainWindow.webContents.send(crawlCommand.log, 'wronggg ' + mssg);
-                canWrite = false;
-            }
-            else { // dialog có nội dung chưa biết
-                await mainWindow.webContents.send(crawlCommand.loginSuccess, -1);
-                //await mainWindow.webContents.send(crawlCommand.otp, -1);
-                await mainWindow.webContents.send(crawlCommand.log, 'alert unknown exception ' + mssg);
-                await dialog.dismiss();
-                await mainBrowser.close();
-                concurentLogin = null;
-            }
+            await mainBrowser.close();
+            concurentLogin = null;
             dialog.dismiss();
         });
 
+        await pageLogin.goto(URL.LOGIN);//, { waitUntil: 'networkidle0' });
         await pageLogin.waitForNavigation({ waitUntil: 'networkidle0' });
 
         // await pageLogin.evaluate(({ _username, _password }) => {
@@ -724,9 +547,6 @@ function doLogin(_username, _password) {
 
         //ngăn race condition
         await Promise.all([pageLogin.click('#ctl01 .wrap-login .inner .tbl-login #btnLogin'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
-
-        //await mainWindow.webContents.send(crawlCommand.log, 'waiting login');
-
 
         //đăng nhập thành công
         await mainWindow.webContents.send(crawlCommand.loginSuccess, 1);
