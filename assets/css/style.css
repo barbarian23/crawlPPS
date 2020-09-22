@@ -7,8 +7,8 @@ body {
     align-items: center;
     background: #fafafa;
     font-family: Arial, Helvetica, sans-serif;
-    color: #4e3861;
-    background: beige;
+    color: #ad42f5;
+    background: lightgrey;
 }
 
 input :hover {
@@ -47,7 +47,7 @@ input :hover {
 }
 
 .crawl-login span {
-    color: #4e3861;
+    color: #ad42f5;
 }
 
 .crawl-login-username-password-below {
@@ -63,18 +63,18 @@ input :hover {
     width: 100%;
     height: 45px;
     border-radius: 4px;
-    border: 1px solid #4e3861;
+    border: 1px solid #ff7900;
     padding-left: 10px;
     -webkit-box-sizing: border-box;
     /* Safari/Chrome, other WebKit */
     -moz-box-sizing: border-box;
     /* Firefox, other Gecko */
     box-sizing: border-box;
-    color: #4e3861;
+    color: #ad42f5;
 }
 
 .crawl-login ::placeholder {
-    color: #4e3861;
+    color: #ad42f5;
 }
 
 .crawl-login-button-submit {
@@ -85,7 +85,7 @@ input :hover {
     justify-content: center;
     align-items: center;
     border-radius: 4px;
-    background: #4e3861;
+    background: #ff7900;
 }
 
 .crawl-login-button-submit span {
@@ -173,23 +173,24 @@ input :hover {
     width: 45px;
     height: 45px;
     border-radius: 4px;
-    border: 1px solid #4e3861;
+    border: 1px solid #ff7900;
     padding-left: 10px;
     -webkit-box-sizing: border-box;
     /* Safari/Chrome, other WebKit */
     -moz-box-sizing: border-box;
     /* Firefox, other Gecko */
     box-sizing: border-box;
-    color: #4e3861;
+    color: #ad42f5;
 }
 
 #crawl_login_file_input {
+    padding: 0px 5px;
     margin-bottom: 5px;
     top: 1px;
     left: 20px;
     height: 50px;
     min-width: 100px;
-    border: 1px solid #4e3861;
+    border: 1px solid #ff7900;
     word-break: break-all;
     border-radius: 4px;
     display: flex;
@@ -236,7 +237,7 @@ input :hover {
     justify-content: center;
     align-items: center;
     border-radius: 4px;
-    background: #4e3861;
+    background: #ff7900;
 }
 
 .crawl-login-button-submit span {
@@ -251,7 +252,7 @@ input :hover {
     width: 100%;
     height: 24px;
     margin-top: 10px;
-    border: 1px solid #4e3861;
+    border: 1px solid #ff7900;
     background: transparent;
     display: none;
 }
@@ -259,7 +260,7 @@ input :hover {
 #div_grey {
     height: 100%;
     width: 0%;
-    background: #4e3861;
+    background: #ff7900;
 }
 
 #success_text {
@@ -270,6 +271,12 @@ input :hover {
 #error_crawl {
     display: none;
     color: red;
+}
+
+.crawl-loading-parent{
+    position: relative;
+    height: 100px;
+    display: none;
 }
 
 .crawl-login-loading{

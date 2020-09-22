@@ -5,7 +5,6 @@ var crawling = false;
 
 var fileNameTXT = "";
 var newFileNameTxt = "";
-var currentOTPStatus = -100;
 
 const crawlCommand = {
     login: "crawl:login",
@@ -34,7 +33,7 @@ function openFile() {
     ipcRenderer.send(crawlCommand.openFile, true);
 }
 
-ipcRenderer.on(crawlCommand.log, (e, item) => {
+electron.ipcRenderer.on(crawlCommand.log, (e, item) => {
     console.log("puppeteer log", item);
 });
 
@@ -280,8 +279,7 @@ function loginSuccess() {
     setTimeout(() => {
         //hiện crawl
         document.getElementById("div_craw").style.display = 'flex';
-        document.getElementById("crawl_otp_success").style.display = 'none';
-        document.getElementById("crawl_otp_validating_text").style.display = "none";
+        document.getElementById("crawl_login_success").style.display = 'none';
     }, 850)
 }
 

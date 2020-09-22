@@ -33,7 +33,7 @@ var curentIndex = 0;
 var headeTitle = "header", errorTitle = "error";
 
 let sleepBetwwenClick = 1500;
-
+let sleepBetwwenMain = 1500;
 const gotTheLock = app.requestSingleInstanceLock(); //singleton
 var URL = {
     LOGIN: "https://10.156.0.19/Account/Subs_info_120days.aspx",
@@ -86,7 +86,7 @@ function createWindow() {
     });
 
     //dev tool
-    //mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     mainWindow.on('crashed', () => {
         win.destroy();
@@ -509,7 +509,7 @@ async function asyncForEach(array, startIndex, callback) {
 function doLogin(_username, _password) {
     concurentLogin = null;
     //đang login
-    concurentLogin = puppeteer.launch({ headless: true, executablePath: exPath == "" ? "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" : exPath }).then(async browser => {
+    concurentLogin = puppeteer.launch({ headless: false, ignoreHTTPSErrors:true, executablePath: exPath == "" ? "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" : exPath }).then(async browser => {
         mainBrowser = browser;
         pageLogin = await browser.newPage();
 
@@ -527,26 +527,34 @@ function doLogin(_username, _password) {
         //dialog số không hợp lệ(sai định dang số, số quá ngắn, quá dài hoặc otp bị sai), không đóng google
         pageLogin.on('dialog', async dialog => {
             let mssg = dialog.message();
-            await mainBrowser.close();
-            concurentLogin = null;
-            dialog.dismiss();
+            await mainWindow.webContents.send(crawlCommand.log, 'Trang web hiện alert ' + mssg);
+            await dialog.dismiss();
+            await mainWindow.webContents.send(crawlCommand.wrongPhoneNumber, inputPhoneNumberArray[curentIndex]);
+            //await mainWindow.webContents.send(crawlCommand.signalWrite, -1);
+            await mainWindow.webContents.send(crawlCommand.log, 'wronggg ' + mssg);
+            canWrite = false;
         });
 
         await pageLogin.goto(URL.LOGIN);//, { waitUntil: 'networkidle0' });
-        await pageLogin.waitForNavigation({ waitUntil: 'networkidle0' });
+        //await pageLogin.waitForNavigation({ waitUntil: 'networkidle0' });
 
         // await pageLogin.evaluate(({ _username, _password }) => {
         //     document.getElementById("txtUsername").value = _username;
         //     document.getElementById("txtPassword").value = _password;
         //     document.getElementById("btnLogin").click;
         // }, { _username, _password });
+        await mainWindow.webContents.send(crawlCommand.log, 'username ' + _username + "password" + _password);
 
-        await pageLogin.$eval('body #ctl01 .wrap-body .inner .tbl-login #txtUsername', (el, value) => el.value = value, _username);
-        await pageLogin.$eval('body #ctl01 .wrap-body .inner .tbl-login #txtPassword', (el, value) => el.value = value, _password);
+        //let arrayName = await pageLogin.$$('body #ctl01 .page .main .accountInfo');     
+        //let result = (await (await arrayName[0].getProperty('innerHTML')).jsonValue());
+        //await mainWindow.webContents.send(crawlCommand.log, 'content ' + result);
+
+        await pageLogin.$eval('body #ctl01 .page .main .accountInfo #MainContent_LoginUser_UserName', (el, value) => el.value = value, _username);
+        await pageLogin.$eval('body #ctl01 .page .main .accountInfo #MainContent_LoginUser_Password', (el, value) => el.value = value, _password);
 
 
         //ngăn race condition
-        await Promise.all([pageLogin.click('#ctl01 .wrap-login .inner .tbl-login #btnLogin'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+        await Promise.all([pageLogin.click('body #ctl01 .page .main .accountInfo #MainContent_LoginUser_LoginButton'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
 
         //đăng nhập thành công
         await mainWindow.webContents.send(crawlCommand.loginSuccess, 1);
@@ -571,7 +579,6 @@ function doLogin(_username, _password) {
         await mainWindow.webContents.send(crawlCommand.loginSuccess, -1);
         //await mainWindow.webContents.send(crawlCommand.otp, -1);
         await mainWindow.webContents.send(crawlCommand.result, false);
-
         await mainWindow.webContents.send(crawlCommand.log, 'uncaught exception ' + err);
         await mainBrowser.close();
         concurentLogin = null;
@@ -587,300 +594,77 @@ async function doCrawl() {
 
             await mainWindow.webContents.send(crawlCommand.log, 'crawl đến phần tử thứ  ' + index + " là số thuê bao " + inputPhoneNumberArray[index] + " = " + element);
 
-            //lấy thông tin  thuê bao
-            await pageLogin.goto(URL.LOGIN);
-
-            //khuyến mại
-            await pageLogin.goto(URL.DISCOUNT);
-
-            //dịch vụ
-            await pageLogin.goto(URL.SERVICE);
-
-            //nhập vào số điện thoại
-            await pageLogin.$eval('#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtThueBao', (el, value) => el.value = value, element);
-
-            // await pageLogin.evaluate(({ element }) => {
-            //     document.getElementById("txtThueBao").value = element;
-            //     document.getElementById("btnSearch").click();
-            // }, { element });
-
-            //ngăn race condition
-            //await Promise.all([pageLogin.click('#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #btnSearch'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
-
-            //bấm nút tìm
-            await pageLogin.click('#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #btnSearch');
-
-
-            //đợi page load
-            //cần xử lý sleep vài giây
-
-            //wwait for value change
-            //await page.waitForFunction('document.getElementById("txtMSIN").value != "No Value"');
-            //dialog không tìm thấy thuê bao hiện lên
-            await timer(sleepBetwwenClick);
-
-            let dialogNotFound = await pageLogin.$("body .panel .messager-body");
-
-
-            let dialogNotFoundvalue = await (await dialogNotFound.getProperty('innerHTML')).jsonValue();
-            //await mainWindow.webContents.send(crawlCommand.log, "dialog không tìm thấy số" + dialogNotFound + " value " + dialogNotFoundvalue);
-            await mainWindow.webContents.send(crawlCommand.notFoundNumber, "không tìm thấy số" + inputPhoneNumberArray[index]);
-            //await mainWindow.webContents.send(crawlCommand.log, "không tìm thấy số" + inputPhoneNumberArray[index]);
-            let counterIndexNotFoundCannotFound = index + 1;
-            await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + counterIndexNotFoundCannotFound);//số thứ tự
-            await writeToXcell(index + rowSpacing, 2, errorTitle + "-" + inputPhoneNumberArray[index] + " không tìm thấy");
-
-            //bấm vào đóng
-            await pageLogin.click('body .panel .dialog-button .l-btn span');
-
-            await timer(sleepBetwwenClick);
+            //gặp alert chưa biết, có lẽ là lỗi,crawl sang cái tiếp theo
 
             //làm mới mảng curent Data
             currentData.length = 0;
 
             //1
-            currentData.push(index + 1);// số thứ tự
-
+            //currentData.push(index + 1);// số thứ tự
+            await writeToXcell(index + rowSpacing, 1, index + 1);
             //2
-            currentData.push(inputPhoneNumberArray[index]);//"Số thuê bao",
-
-            // await timer(5000);
+           // currentData.push(inputPhoneNumberArray[index]);//"Số thuê bao",
             try {
-                let domElement = "", value = "", valueAlt = "";
-
-                //3
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtMSIN");
-                value = await (await domElement.getProperty('value')).jsonValue();//"MSIN",
-                // await mainWindow.webContents.send(crawlCommand.log, 'MSIN  ' + value);
-                await currentData.push(value);
-
-                //4
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtLoaiTB");
-                value = await (await domElement.getProperty('value')).jsonValue();//"Loại thuê bao",
-                // await mainWindow.webContents.send(crawlCommand.log, 'Loại thuê bao  ' + value);
-                await currentData.push(value);
-
-                //5
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #chkGoiDi");
-                value = await (await domElement.getProperty('checked')).jsonValue() === true ? mCheckTrue : mCheckFalse;//"Gọi đi",
-                // await mainWindow.webContents.send(crawlCommand.log, 'Gọi đi  ' + value);
-                await currentData.push(value);
-
-                //6
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #chkGoiDen");
-                value = await (await domElement.getProperty('checked')).jsonValue() === true ? mCheckTrue : mCheckFalse;//"Gọi đến",
-                // await mainWindow.webContents.send(crawlCommand.log, 'Gọi đến  ' + value);
-                await currentData.push(value);
-
-                //7
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtSimType");
-                value = await (await domElement.getProperty('value')).jsonValue();//"Loại SIM ",
-                //await mainWindow.webContents.send(crawlCommand.log, 'Loại SIM  ' + value);
-                await currentData.push(value);
-
-                //8
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtHangHoiVien");
-                value = await (await domElement.getProperty('value')).jsonValue();//"Hạng hội viên",
-                //await mainWindow.webContents.send(crawlCommand.log, ' ' + value);
-                await currentData.push(value);
-
-                //9
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtTinh");
-                value = await (await domElement.getProperty('value')).jsonValue();//"Hạng hội viên",
-                // await mainWindow.webContents.send(crawlCommand.log, 'txtTinh  ' + value);
-                await currentData.push(value);
-
-                //10
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtNgayKH");
-                value = await (await domElement.getProperty('value')).jsonValue();//"Ngày KH",
-                //await mainWindow.webContents.send(crawlCommand.log, 'Ngày KH  ' + value);
-                await currentData.push(value);
-
-                //11
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtMaKH");
-                value = await (await domElement.getProperty('value')).jsonValue();//"Mã KH",
-                //await mainWindow.webContents.send(crawlCommand.log, 'Mã KH  ' + value);
-                await currentData.push(value);
-
-                //12
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtMaCQ");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Mã CQ"",
-                //await mainWindow.webContents.send(crawlCommand.log, 'Mã CQ ' + value);
-                await currentData.push(value);
-
-                //13
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtTB");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Tên thuê bao"",
-                //await mainWindow.webContents.send(crawlCommand.log, 'Tên thuê bao  ' + value);
-                await currentData.push(value);
-
-
-                //14
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtNgaySinh");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Ngày sinh"",
-                //await mainWindow.webContents.send(crawlCommand.log, 'Ngày sinh  ' + value);
-                await currentData.push(value);
-
-                //15
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtSoGT");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Số GT"",
-                //await mainWindow.webContents.send(crawlCommand.log, 'Số GT  ' + value);
-                await currentData.push(value);
-
-                //16
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtNoiCap");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Ngày cấp"",
-                //await mainWindow.webContents.send(crawlCommand.log, 'Ngày cấp  ' + value);
-                await currentData.push(value);
-
-                //17
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtPIN");
-                value = await (await domElement.getProperty('value')).jsonValue();//""PIN"",
-
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtPUK");
-                valueAlt = await (await domElement.getProperty('value')).jsonValue();//""PUK"",
-
-                //await mainWindow.webContents.send(crawlCommand.log, 'Số PIN/PUK  ' + value + "/" + valueAlt);
-                await currentData.push(value + "/" + valueAlt);//"Số PIN/PUK",
-
-                //18
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtPIN2");
-                value = await (await domElement.getProperty('value')).jsonValue();//""PIN2"",
-
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtPUK2");
-                valueAlt = await (await domElement.getProperty('value')).jsonValue();//""PUK2"",
-
-                // await mainWindow.webContents.send(crawlCommand.log, 'Số PIN2/PUK2  ' + value + "/" + valueAlt);
-                await currentData.push(value + "/" + valueAlt);//"Số PIN2/PUK2",
-
-                //19
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtDoiTuong");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Đối tượng"",
-                //await mainWindow.webContents.send(crawlCommand.log, 'Đối tượng  ' + value);
-                await currentData.push(value);
-
-                //20
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtDiaChiChungTu");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Địa chỉ chứng từ"",
-                //   await mainWindow.webContents.send(crawlCommand.log, 'Địa chỉ chứng từ ' + value);
-                await currentData.push(value);
-
-                //21
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtDiaChiThanhToan");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Địa chỉ thanh toán",
-                //   await mainWindow.webContents.send(crawlCommand.log, 'Địa chỉ thanh toán' + value);
-                await currentData.push(value);
-
-                //22
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtDiaChiThuongTru");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Địa chỉ thường trú",
-                //   await mainWindow.webContents.send(crawlCommand.log, 'Địa chỉ thường trú' + value);
-                await currentData.push(value);
-
-                //23
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtTKC");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Tài khoản chính",
-                //  await mainWindow.webContents.send(crawlCommand.log, 'Tài khoản chính' + value);
-                await currentData.push(value);
-
-                //24
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtHSD");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Hạn sử dụng",
-                //  await mainWindow.webContents.send(crawlCommand.log, 'Hạn sử dụng' + value);
-                await currentData.push(value);
-
-                //25
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtKhuyenMai");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Thuê bao trả trước được tham gia khuyến mại",
-                // await mainWindow.webContents.send(crawlCommand.log, 'Thuê bao trả trước được tham gia khuyến mại' + value);
-                await currentData.push(value);
-
-                //26
-                domElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .boxOB .midbox .nobor #txtKhuyenNghi");
-                value = await (await domElement.getProperty('value')).jsonValue();//""Gói cước trả trước ưu tiên mời KH đăng ký",
-                //  await mainWindow.webContents.send(crawlCommand.log, 'Gói cước trả trước ưu tiên mời KH đăng ký' + value);
-                await currentData.push(value);
-
-                //bấm vào 3g tab
-                //  await mainWindow.webContents.send(crawlCommand.log, 'click on 3G tab ');
-                //3g tab tại tab thứ 2
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(1) span");
-                await timer(sleepBetwwenClick);
-
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(2) span");
-                await timer(sleepBetwwenClick);
-
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(3) span");
-                await timer(sleepBetwwenClick);
-
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(2) span");
-                await timer(sleepBetwwenClick);
-
-                let dataFromTable3G = await pageLogin.$$eval("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabContent .midbox .myTbl tr td", tableData => tableData.map((td) => {
-                    return td.innerHTML;
-                }));
-
-                // await mainWindow.webContents.send(crawlCommand.log, "dịch vụ 3g " + dataFromTable3G);
-
-                //bấm vào lịch sử thuê bao
-                // await mainWindow.webContents.send(crawlCommand.log, 'click lịch sử thuê bao ');
-                //lịch sử thêu bao tab tại tab thứ 1
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(1) span");
-                await timer(sleepBetwwenClick);
-
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(2) span");
-                await timer(sleepBetwwenClick);
-
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(3) span");
-                await timer(sleepBetwwenClick);
-
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(1) span");
-                await timer(sleepBetwwenClick);
-
-                let dataFromTableLSTB = await pageLogin.$$eval("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabContent .midbox .myTbl tr td", tableData => tableData.map((td) => {
-                    return td.innerHTML;
-                }));
-
-                //  await mainWindow.webContents.send(crawlCommand.log, "lịch sử thuê bao " + dataFromTableLSTB);
-
-                //bấm vào lịch sử nạp thẻ
-                // await mainWindow.webContents.send(crawlCommand.log, 'click lịch sử nạp thẻ ');
-                //lịch sử thêu bao tab tại tab thứ 3
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(1) span");
-                await timer(sleepBetwwenClick);
-
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(2) span");
-                await timer(sleepBetwwenClick);
-
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(3) span");
-                await timer(sleepBetwwenClick);
-
-                await pageLogin.click("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabtab :nth-child(3) span");
-                await timer(sleepBetwwenClick);
-
-                let dataFromTableLSNT = await pageLogin.$$eval("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabContent .midbox .myTbl tr td", tableData => tableData.map((td) => {
-                    return td.innerHTML;
-                }));
-
-                // await mainWindow.webContents.send(crawlCommand.log, "lịch sử nạp thẻ " + dataFromTableLSNT);
-
                 if (canWrite) {
+                    //==========================================================================
+                    //lấy thông tin  thuê bao
+                    await pageLogin.goto(URL.HOME);
+                    //nhập vào số điện thoại
+                    await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
+                    await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+
+                    //await page.waitForFunction("document.querySelector('.wrapper') && document.querySelector('.wrapper').clientHeight != 0");
+                    await timer(sleepBetwwenMain);
+
+
+                    let dataFromTableHome = await pageLogin.$$eval("body #ctl01 .page .main #wrapper .MainContent_Grid2D tr td", tableData => tableData.map((td) => {
+                        return td.innerHTML;
+                    }));
+                    
                     //phần ghi ra file excel
                     //đến phẩn tử 26 là hết phần thông tin khách
                     // await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin khách " + currentData);
                     let outerIndex = index;
-                    for (let index = 0; index < 25; index++) {
-                        await writeToXcell(outerIndex + rowSpacing, index + 1, currentData[index]);
-                    }
-
+                    await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount  ' + dataFromTableDiscount);
+                    
                     let tempOnlyNeedDay = 0;
 
-                    //3g
-                    if (dataFromTable3G != undefined) {
+                    if (dataFromTableHome != undefined) {
+                        let currentCollumn = 2;
+                        //breakPerSerrvice = 6;
+                        //let limitRange = dataFromTableHome.length > 18 ? 18 : dataFromTableHome.length; // do chỉ có 3 dịch vụ => 3 * 6 = 18
+                        for (let index = 0; index < dataFromTableHome.length; index++) {
+                            //dataFromTableHome
+                            if (index % 2 == 1) {//chỉ lẻ mới lấy
+                                await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableHome[index]);
+                                currentCollumn++;
+                            }
+                        }
+                    }
+
+                    //==========================================================================
+                    //khuyến mại
+                    await pageLogin.goto(URL.DISCOUNT);
+                    //nhập vào số điện thoại
+                    await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
+                    await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+
+                    //await page.waitForFunction("document.querySelector('.wrapper') && document.querySelector('.wrapper').clientHeight != 0");
+                    await timer(sleepBetwwenMain);
+
+
+
+                    let dataFromTableDiscount = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView2 tr td", tableData => tableData.map((td) => {
+                        return td.innerHTML;
+                    }));
+
+
+                    await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount  ' + dataFromTableDiscount);
+                    
+                    if (dataFromTableDiscount != undefined) {
                         let currentCollumn = 27;
                         breakPerSerrvice = 6;
-                        let limitRange = dataFromTable3G.length > 18 ? 18 : dataFromTable3G.length; // do chỉ có 3 dịch vụ => 3 * 6 = 18
-                        // await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin dịch vụ ");
+                        let limitRange = dataFromTableDiscount.length > 18 ? 18 : dataFromTableDiscount.length; // do chỉ có 3 dịch vụ => 3 * 6 = 18
                         for (let index = 0; index < limitRange; index++) {
                             //dataFromTable3G
                             if (index % breakPerSerrvice == 0) {
@@ -889,185 +673,78 @@ async function doCrawl() {
                             } else {
                                 tempOnlyNeedDay++;
                                 if (tempOnlyNeedDay == 3 || tempOnlyNeedDay == 4) {
-                                    let tDayInside = dataFromTable3G[index].split(" ")[0];
+                                    let tDayInside = dataFromTableDiscount[index].split(" ")[0];
                                     //let tTimeInside = dataFromTable3G[index].split(" ")[1];
                                     await writeToXcell(outerIndex + rowSpacing, currentCollumn, tDayInside);
                                 } else {
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTable3G[index]);
+                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableDiscount[index]);
                                 }
 
                                 currentCollumn++;
                             }
                         }
                     }
+                    
 
-                    //lịch sử thuê bao
-                    if (dataFromTableLSTB != undefined) {
-                        let currentCollumn = 42;
-                        breakPerSerrvice = 5;
-                        let startIndex = -1;
-                        tempOnlyNeedDay = 0;
-                        // await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin lịch sử thuê bao gprs");
-                        //tìm ra vị trí đầu tiên là dịch vụ gprs
-                        dataFromTableLSTB.some((item, index) => {
-                            if (item === "GPRS" && index % 9 == 0) {
-                                startIndex = index;
-                                return true;
-                            }
-                        });
 
-                        if (startIndex != -1) {//tìm thấy
-                            for (let index = startIndex; index < startIndex + 5; index++) {
-                                //dataFromTableLSTB
-                                // await mainWindow.webContents.send(crawlCommand.log, "ghi vào dịch vụ GPRS " + dataFromTableLSTB[index]);
+                    //==========================================================================
+                    //dịch vụ
+                    await pageLogin.goto(URL.SERVICE);
+                    //nhập vào số điện thoại
+                    await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
+                    await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+
+                    //await page.waitForFunction("document.querySelector('.wrapper') && document.querySelector('.wrapper').clientHeight != 0");
+                    await timer(sleepBetwwenMain);
+
+
+
+                    let dataFromTableService = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView1 tr td", tableData => tableData.map((td) => {
+                        return td.innerHTML;
+                    }));
+
+                    //phần ghi ra file excel
+                    //đến phẩn tử 26 là hết phần thông tin khách
+                    // await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin khách " + currentData);
+                    
+                    await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableService  ' + dataFromTableService);
+                    /*
+                    let tempOnlyNeedDay = 0;
+
+                    if (dataFromTableService != undefined) {
+                        let currentCollumn = 27;
+                        breakPerSerrvice = 6;
+                        let limitRange = dataFromTableService.length > 18 ? 18 : dataFromTableService.length; // do chỉ có 3 dịch vụ => 3 * 6 = 18
+                        for (let index = 0; index < limitRange; index++) {
+                            //dataFromTable3G
+                            if (index % breakPerSerrvice == 0) {
+                                tempOnlyNeedDay = 0;
+                                continue;
+                            } else {
                                 tempOnlyNeedDay++;
-                                if (tempOnlyNeedDay == 2) {
-                                    let tDayInside = dataFromTableLSTB[index].split(" ")[0];
+                                if (tempOnlyNeedDay == 3 || tempOnlyNeedDay == 4) {
+                                    let tDayInside = dataFromTableService[index].split(" ")[0];
                                     //let tTimeInside = dataFromTable3G[index].split(" ")[1];
                                     await writeToXcell(outerIndex + rowSpacing, currentCollumn, tDayInside);
                                 } else {
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableLSTB[index]);
+                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableService[index]);
                                 }
-                                currentCollumn++;
-                            }
-                        }
 
-                        //await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin lịch sử thuê bao ic");
-
-                        //tìm ra vị trí đầu tiên là dịch vụ ic
-                        tempOnlyNeedDay = 0;
-                        startIndex = -1;
-                        dataFromTableLSTB.some((item, index) => {
-                            if (item.includes("IC") && index % 9 == 0) {
-                                startIndex = index;
-                                return true;
-                            }
-                        });
-
-                        //await mainWindow.webContents.send(crawlCommand.log, "tra ứu dịch vụ IC " + startIndex);
-                        if (startIndex != -1) {//tìm thấy
-                            for (let index = startIndex; index < startIndex + 5; index++) {
-                                //dataFromTableLSTB
-                                // await mainWindow.webContents.send(crawlCommand.log, "ghi vào dịch vụ IC " + dataFromTableLSTB[index]);
-                                tempOnlyNeedDay++;
-                                if (tempOnlyNeedDay == 2) {
-                                    let tDayInside = dataFromTableLSTB[index].split(" ")[0];
-                                    //let tTimeInside = dataFromTable3G[index].split(" ")[1];
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, tDayInside);
-                                } else {
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableLSTB[index]);
-                                }
-                                currentCollumn++;
-                            }
-                        }
-
-                        //await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin lịch sử thuê bao oc");
-                        //tìm ra vị trí đầu tiên là dịch vụ oc
-                        startIndex = -1;
-                        tempOnlyNeedDay = 0;
-                        dataFromTableLSTB.some((item, index) => {
-                            if (item.includes("OC") && index % 9 == 0) {
-                                startIndex = index;
-                                return true;
-                            }
-                        });
-
-                        // await mainWindow.webContents.send(crawlCommand.log, "tra ứu dịch vụ OC " + startIndex);
-                        if (startIndex != -1) {//tìm thấy
-                            for (let index = startIndex; index < startIndex + 5; index++) {
-                                //dataFromTableLSTB
-                                // await mainWindow.webContents.send(crawlCommand.log, "ghi vào dịch vụ OC " + dataFromTableLSTB[index]);
-                                tempOnlyNeedDay++;
-                                if (tempOnlyNeedDay == 2) {
-                                    let tDayInside = dataFromTableLSTB[index].split(" ")[0];
-                                    //let tTimeInside = dataFromTable3G[index].split(" ")[1];
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, tDayInside);
-                                } else {
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableLSTB[index]);
-                                }
-                                currentCollumn++;
-                            }
-                        }
-
-                        // mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin lịch sử thuê bao can");
-                        //tìm ra vị trí đầu tiên là dịch vụ oc
-                        startIndex = -1;
-                        tempOnlyNeedDay = 0;
-                        dataFromTableLSTB.some((item, index) => {
-                            if (item.includes("CAN") && index % 9 == 0) {
-                                startIndex = index;
-                                return true;
-                            }
-                        });
-
-                        // await mainWindow.webContents.send(crawlCommand.log, "tra ứu dịch vụ CAN " + startIndex);
-                        if (startIndex != -1) {//tìm thấy
-                            for (let index = startIndex; index < startIndex + 5; index++) {
-                                //dataFromTableLSTB
-                                // await mainWindow.webContents.send(crawlCommand.log, "ghi vào dịch vụ OC " + dataFromTableLSTB[index]);
-                                tempOnlyNeedDay++;
-                                if (tempOnlyNeedDay == 2) {
-                                    let tDayInside = dataFromTableLSTB[index].split(" ")[0];
-                                    //let tTimeInside = dataFromTable3G[index].split(" ")[1];
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, tDayInside);
-                                } else {
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableLSTB[index]);
-                                }
-                                currentCollumn++;
-                            }
-                        }
-
-
-                    }
-
-                    //lịch sử nạp thẻ
-                    if (dataFromTableLSNT != undefined) {
-                        let currentCollumn = 62;
-                        breakPerSerrvice = 5;
-                        let limitRange = dataFromTableLSNT.length > 15 ? 15 : dataFromTableLSNT.length; // do chỉ có 2 dịch vụ => 2 * 5 = 10
-                        //await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin nạp thẻ " + dataFromTableLSNT.length + " " + dataFromTableLSNT.leng);
-                        tempOnlyNeedDay = 0;
-                        if (dataFromTableLSNT.length == 0) {
-                            //await mainWindow.webContents.send(crawlCommand.log, "thông tin nạp thẻ undefined");
-                            //let noLSNTElement = await pageLogin.$("#wraper #bodypage #col-right .tabs-wrap #rightarea #tracuuthongtinkhachhang .body .nobor .box5 #tabContent .midbox div");
-                            //let noLSNT = await (await noLSNTElement.getProperty('innerHTML')).jsonValue();
-                            // await mainWindow.webContents.send(crawlCommand.log, "thông tin nạp thẻ undefined " + noLSNTElement);
-                            let currentCollumn = 63;//ô 63 rộng hơn
-                            let noLSNT = "Trong 30 ngày gần đây không có thông tin nạp thẻ";
-                            await writeToXcell(outerIndex + rowSpacing, currentCollumn, noLSNT);
-                        } else {
-
-                            // do nạp thẻ header cũng kaf td, nên cần bắt đầu từ
-                            for (let index = 5; index < limitRange; index++) {
-                                //dataFromTable3G
-                                if (index % 5 === 0) {
-                                    tempOnlyNeedDay = 0;
-                                }
-                                tempOnlyNeedDay++;
-                                if (tempOnlyNeedDay === 2) {
-                                    let tDayInside = dataFromTableLSNT[index].split(" ")[0];
-                                    //let tTimeInside = dataFromTable3G[index].split(" ")[1];
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, tDayInside);
-                                } else {
-                                    await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableLSNT[index]);
-                                }
-                                //await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin nạp thẻ có nội dung " + dataFromTableLSNT[index]);
                                 currentCollumn++;
                             }
                         }
                     }
-
-                } else {
+                    */
+                }
+                else {
                     let counterIndexNotFound = index + 1;
                     await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + counterIndexNotFound);//số thứ tự
                     await writeToXcell(index + rowSpacing, 2, errorTitle + "-" + inputPhoneNumberArray[index] + " bị lỗi, không tra cứu");
                 }
-
             }
             catch (err) {
                 await mainWindow.webContents.send(crawlCommand.log, 'lỗi  ' + err);
             }
-
 
         });
 
