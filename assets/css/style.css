@@ -7,7 +7,7 @@ body {
     align-items: center;
     background: #fafafa;
     font-family: Arial, Helvetica, sans-serif;
-    color: #ad42f5;
+    color: #318a1ae3;
     background: lightgrey;
 }
 
@@ -47,7 +47,7 @@ input :hover {
 }
 
 .crawl-login span {
-    color: #ad42f5;
+    color: #318a1ae3;
 }
 
 .crawl-login-username-password-below {
@@ -70,11 +70,11 @@ input :hover {
     -moz-box-sizing: border-box;
     /* Firefox, other Gecko */
     box-sizing: border-box;
-    color: #ad42f5;
+    color: black;
 }
 
 .crawl-login ::placeholder {
-    color: #ad42f5;
+    color: rgb(107, 133, 113);
 }
 
 .crawl-login-button-submit {
@@ -180,7 +180,7 @@ input :hover {
     -moz-box-sizing: border-box;
     /* Firefox, other Gecko */
     box-sizing: border-box;
-    color: #ad42f5;
+    color: #318a1ae3;
 }
 
 #crawl_login_file_input {

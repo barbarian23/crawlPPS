@@ -235,7 +235,7 @@ ipcRenderer.on(crawlCommand.loginSuccess, (e, item) => {
         document.getElementById("crawl_login_error_text").style.color = 'red';
         document.getElementById("crawl_login_error_text").style.display = 'block';
     } else if (item == -3) {
-        document.getElementById("crawl_login_error_text").innerHTML = "Sai mật khẩu ....";
+        document.getElementById("crawl_login_error_text").innerHTML = "Vui  lòng kiểm tra lại tên đăng nhập hoặc mật khẩu ...";
         document.getElementById("crawl_login_error_text").style.color = 'red';
         document.getElementById("crawl_login_error_text").style.display = 'block';
     }
