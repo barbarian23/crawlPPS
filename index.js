@@ -6,6 +6,10 @@ var crawling = false;
 var fileNameTXT = "";
 var newFileNameTxt = "";
 
+var thongtin = true,
+data = false,
+khuyenmai = false;
+
 const crawlCommand = {
     login: "crawl:login",
     openFile: "crawl:openFile",
@@ -26,8 +30,26 @@ const crawlCommand = {
     loginSuccess: "crawl:login_success",
     notFoundNumber: "crawl:not_found_number",
     log: "crawl:log",
+    thongtin: "crawl:thongtin",
+    data: "crawl:data",
+    khuyenmai: "crawl:khuyenmai",
     allowToWrite: "crawl:log", // cho phép write hoặc không, mắc định là cho phép, chỉ khi có dialog , mất kết nối mạng, hoặc sesion timeout , số không hợp lệ, không tìm thấy số
 };
+
+document.getElementById("thongtin").addEventListener("change",function(e){
+    thongtin = e.currentTarget.checked;
+    ipcRenderer.send(crawlCommand.thongtin, e.currentTarget.checked);
+}) 
+
+document.getElementById("data").addEventListener("change",function(e){
+    data = e.currentTarget.checked;
+    ipcRenderer.send(crawlCommand.data, e.currentTarget.checked);
+});
+
+document.getElementById("khuyenmai").addEventListener("change",function(e){
+    khuyenmai = e.currentTarget.checked;
+    ipcRenderer.send(crawlCommand.khuyenmai, e.currentTarget.checked);
+});
 
 function openFile() {
     ipcRenderer.send(crawlCommand.openFile, true);

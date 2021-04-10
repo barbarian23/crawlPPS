@@ -62,9 +62,23 @@
             <span id="span_file_input_error"></span>
         </div>
         <div class="crawl-login-crawl">
+            <div>
+            <label class="container">Thông tin thuê bao
+                <input id="thongtin" type="checkbox" checked="checked">
+                <span class="checkmark"></span>
+              </label>
+              <label class="container">Thông tin đăng ký gói cước DATA
+                <input id="data" type="checkbox">
+                <span class="checkmark"></span>
+              </label>
+              <label class="container">Khuyến mại đăng ký gói cục bộ
+                <input id="khuyenmai" type="checkbox">
+                <span class="checkmark"></span>
+              </label>
+            </div>
             <div class="crawl-login-number-delay" id="div_delay_time">
-                <span>Thời gian nghỉ</span> <input type="number" id="second_crawl" max="60" min="10"
-                    value="10"><span>giây</span>
+                <span>Thời gian nghỉ</span> <input type="number" id="second_crawl" max="60" min="1"
+                    value="1"><span>giây</span>
             </div>
             <div class="crawl-login-button-submit" id="btn_crawl" onclick="crawl()">
                 <span>Tra cứu thông tin</span>

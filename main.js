@@ -45,13 +45,13 @@ var noneName = "Không có";
 var curentIndex = 0;
 var headeTitle = "header", errorTitle = "error";
 var isRewrite = false;//quyeest ddinhj khi
-let sleepBetwwenMain = 1500;
+let sleepBetwwenMain = 1000;
 const gotTheLock = app.requestSingleInstanceLock(); //singleton
 var URL = {
     LOGIN: "https://10.156.0.19/Account/Subs_info_120days.aspx",
     HOME: "https://10.156.0.19/Account/Subs_info_120days.aspx",
-    DISCOUNT: "https://10.156.0.19/Account/KMCB_HIST.aspx",
     SERVICE: "https://10.156.0.19/Account/Data_Packages_new.aspx",
+    DISCOUNT: "https://10.156.0.19/Account/KMCB_2019.aspx",//"https://10.156.0.19/Account/KMCB_HIST.aspx",
 };
 var ERROR = "Server Error in '/'";
 var NOINFO = "Không có thông tin thuê bao ";
@@ -76,6 +76,9 @@ const crawlCommand = {
     loginSuccess: "crawl:login_success",
     log: "crawl:log",
     notFoundNumber: "crawl:not_found_number",
+    thongtin: "crawl:thongtin",
+    data: "crawl:data",
+    khuyenmai: "crawl:khuyenmai",
     signalWrite: "crawl:signalWrite", // cho phép write hoặc không, mắc định là cho phép, chỉ khi có dialog , 
     //số không hợp lệ, -1 
     // không tìm thấy số -2
@@ -83,69 +86,76 @@ const crawlCommand = {
     //mất kết nối mạng -4 - trường hợp ít xảy ra, khồng xét
 };
 
+var thongtin = true,
+    data = false,
+    khuyenmai = false;
+
 var canWrite = true;
 
 var xlStyleError;
 var currentData = [], currentDiscount = [], currentService = [];
 var unitExcel = [
 ], discountExcel1 = [], discountExcel2 = [], serviceExcel = [];//là mảng hai chiều chứa danh sách cá unit excel và thuộc tính
-var discountHeader1 = [], discountHeader2 = [], serviceHeader = [], mainHeader = [];
+var discountHeader1 = [], discountHeader2 = [], infoHeader = [], serviceHeader = [], mainHeader = [];
 var currentDiscount1 = [], currentDiscount2 = [];
 var defaultHeader = [
     "STT",
-    //Thông tin thuê bao
     "Số thuê bao",
-    "Lớp dịch vụ",
-    "Tài khoản chính",
-    "Tài khoản KM",
-    "Tài khoản KM1",
-    "Tài khoản KM2",
-    "Tài khoản KM3",
-    "Tài khoản DK1",
-    "Tài khoản DK2",
-    "Trạng thái hiện tại",
-    "Trạng thái trước",
-    "Ngày hết hạn (yyyy-mm-dd)",
-    "Ngày tạo thuê bao (yyyy-mm-dd)",
-    "Ngày kích hoạt (yyyy-mm-dd)",
-    "ACC ALO",
-    "Ala carte",
-    "Các gói KM được tham gia (09/2020)",
-], defaultServiceHeader = [], defaultDiscountHeader1 = [], defaultDiscountHeader2 = [];
+], defaultInfoHeader = [], defaultServiceHeader = [], defaultDiscountHeader1 = [], defaultDiscountHeader2 = [];
+//giờ chỉ lấy 1 disocunt
 var isDiscount2 = false;//true có 2 disocunt - false có 1 discount
-var nameDiscount1 = [
-    "MSISDN",//bỏ
+var nameHeader = [
+    //Thông tin thuê bao
+    "Tài khoản chính",
+    "Ngày hết hạn (yyyy-mm-dd)",
+    "Các gói KM được tham gia (09/2020)", // cần thay đổi
+]
+var nameDiscount = [
+    "MSISDN",
     "Thời gian bắt đầu đăng ký",
     "Gói cước",
     "Loại chu kỳ",
     "Chu kỳ hiện tại",
     "Số lần đã đăng ký trong ngày",
     "Thời gian thay đổi gần nhất",
+    "Thời gian thay hết hạn chu kỳ",
     "Trạng thái",
     "Action",
 ];
-var nameDiscount2 = [
-    "MSISDN",//bỏ
-    "Thời gian thực hiện giao dịch",
-    "Loại dịch vụ",
-    "Bản tin đến",
-    "Bản tin phản hồi",
-    "Loại giao dịch",
-    "A La Carte",
-    "Ngày bắt đầu gói cước",
-    "Ngày kết thúc gói cước",
-    "Trạng thái",
-    "Lý do",
-    "Chi tiết"
-];
+// var nameDiscount1 = [
+//     "MSISDN",//bỏ
+//     "Thời gian bắt đầu đăng ký",
+//     "Gói cước",
+//     "Loại chu kỳ",
+//     "Chu kỳ hiện tại",
+//     "Số lần đã đăng ký trong ngày",
+//     "Thời gian thay đổi gần nhất",
+//     "Trạng thái",
+//     "Action",
+// ];
+// var nameDiscount2 = [
+//     "MSISDN",//bỏ
+//     "Thời gian thực hiện giao dịch",
+//     "Loại dịch vụ",
+//     "Bản tin đến",
+//     "Bản tin phản hồi",
+//     "Loại giao dịch",
+//     "A La Carte",
+//     "Ngày bắt đầu gói cước",
+//     "Ngày kết thúc gói cước",
+//     "Trạng thái",
+//     "Lý do",
+//     "Chi tiết"
+// ];
 var nameService = [
-    "STT",//bỏ
-    "Số thuê bao",//bỏ
+    "STT",
+    "Số thuê bao",
     "Gói cước",
     "Ngày bắt đầu",
     "Ngày kết thúc",
     "Ngày thay đổi gần nhất",
 ];
+var curentProcerssingIndex = 0;
 var page, pageLogin;
 var currentDiscountCount = 1;
 var currentServiceCount = 1;
@@ -212,34 +222,35 @@ const mainMenuTemplate = [
     }
 ];
 
-if (!gotTheLock) {
-    app.quit()
-} else {
-    app.on('second-instance', async (event, commandLine, workingDirectory) => {
-        // Someone tried to run a second instance, we should focus our window.
-        if (mainWindow) {
-            await mainWindow.webContents.send(crawlCommand.log, "log second-instance");
+//singleton
+// if (!gotTheLock) {
+//     app.quit()
+// } else {
+//     app.on('second-instance', async (event, commandLine, workingDirectory) => {
+//         // Someone tried to run a second instance, we should focus our window.
+//         if (mainWindow) {
+//             await mainWindow.webContents.send(crawlCommand.log, "log second-instance");
 
-            dialog.showMessageBox(mainWindow, {
-                title: 'Không nên chạy nhiều cửa sổ',
-                buttons: ['Đóng'],
-                type: 'warning',
-                message: 'Để tránh trang web từ chối truy cập nhiều, chỉ nên chạy 1 cửa sổ!',
-            });
+//             dialog.showMessageBox(mainWindow, {
+//                 title: 'Không nên chạy nhiều cửa sổ',
+//                 buttons: ['Đóng'],
+//                 type: 'warning',
+//                 message: 'Để tránh trang web từ chối truy cập nhiều, chỉ nên chạy 1 cửa sổ!',
+//             });
 
-            if (mainWindow.isMinimized()) {
-                myWindow.restore()
-            }
-            mainWindow.focus()
-        }
-    })
+//             if (mainWindow.isMinimized()) {
+//                 myWindow.restore()
+//             }
+//             mainWindow.focus()
+//         }
+//     })
 
-    // Create myWindow, load the rest of the app, etc...
-    //app.whenReady().then(createWindow);
-    app.on('ready', createWindow);
-}
+//     // Create myWindow, load the rest of the app, etc...
+//     //app.whenReady().then(createWindow);
+//     app.on('ready', createWindow);
+// }
 
-//app.on('ready', createWindow);
+app.on('ready', createWindow);
 
 app.on('window-all-closed', function () {
     if (process.platform !== 'darwin') {
@@ -283,46 +294,45 @@ async function createExcelMain() {
     wb = new xl.Workbook();
     ws = wb.addWorksheet("Tra cuu");
     ws.column(1).setWidth(5);//STT
+    ws.column(2).setWidth(15);//Số thuê bao,
+    // ws.column(3).setWidth(15);//Lớp dịch vụ,
+    // ws.column(4).setWidth(15);//  Tài khoản chính,
+    // ws.column(5).setWidth(25);//  Tài khoản KM,
+    // ws.column(6).setWidth(25);//  Tài khoản KM1,
+    // ws.column(7).setWidth(25);//  Tài khoản KM2,
+    // ws.column(8).setWidth(25);// Tài khoản KM3,
+    // ws.column(9).setWidth(25);//  Tài khoản DK1,
+    // ws.column(10).setWidth(25);//  Tài khoản DK2,
+    // ws.column(11).setWidth(25);//  Trạng thái hiện tại,
+    // ws.column(12).setWidth(25);//   Trạng thái trước,
+    // ws.column(13).setWidth(25);//   Ngày hết hạn (yyyy-mm-dd),
+    // ws.column(14).setWidth(25);//   Ngày tạo thuê bao (yyyy-mm-dd),
+    // ws.column(15).setWidth(25);//   Ngày kích hoạt (yyyy-mm-dd),
+    // ws.column(16).setWidth(25);//   ACC ALO,
+    // ws.column(17).setWidth(25);//  Ala carte,
+    // ws.column(18).setWidth(35);//  Các gói KM được tham gia (09/2020),
 
     //Thông tin thuê bao
-    ws.column(2).setWidth(15);//Số thuê bao,
-    ws.column(3).setWidth(15);//Lớp dịch vụ,
-    ws.column(4).setWidth(15);//  Tài khoản chính,
-    ws.column(5).setWidth(25);//  Tài khoản KM,
-    ws.column(6).setWidth(25);//  Tài khoản KM1,
-    ws.column(7).setWidth(25);//  Tài khoản KM2,
-    ws.column(8).setWidth(25);// Tài khoản KM3,
-    ws.column(9).setWidth(25);//  Tài khoản DK1,
-    ws.column(10).setWidth(25);//  Tài khoản DK2,
-    ws.column(11).setWidth(25);//  Trạng thái hiện tại,
-    ws.column(12).setWidth(25);//   Trạng thái trước,
-    ws.column(13).setWidth(25);//   Ngày hết hạn (yyyy-mm-dd),
-    ws.column(14).setWidth(25);//   Ngày tạo thuê bao (yyyy-mm-dd),
-    ws.column(15).setWidth(25);//   Ngày kích hoạt (yyyy-mm-dd),
-    ws.column(16).setWidth(25);//   ACC ALO,
-    ws.column(17).setWidth(25);//  Ala carte,
-    ws.column(18).setWidth(35);//  Các gói KM được tham gia (09/2020),
+    ws.column(3).setWidth(15);//  Tài khoản chính,
+    ws.column(4).setWidth(25);//   Ngày hết hạn (yyyy-mm-dd),
+    ws.column(5).setWidth(35);//  Các gói KM được tham gia (09/2020),
 
-    //Dịch vụ
-    //ws.column(19).setWidth(15);// Số thuê bao,
-    //ws.column(20).setWidth(15);// Gói cước,
-    //ws.column(21).setWidth(20);// Ngày bắt đầu,
-    //ws.column(22).setWidth(20);// Ngày kết thúc,
-    //ws.column(23).setWidth(20);// Ngày thay đổi gần nhất,
+    //Đăng ký gói cước Data
+    //ws.column(6).setWidth(15);// Gói cước,
+    //ws.column(8).setWidth(20);// Ngày bắt đầu,
+    //ws.column(9).setWidth(20);// Ngày kết thúc,
+    //ws.column(10).setWidth(20);// Ngày thay đổi gần nhất,
 
     //Khuyến mãi
-    //ws.column(24).setWidth(15);//  MSISDN,
-    //ws.column(25).setWidth(25);//  Thời gian thực hiện giao dịch,
-    //ws.column(26).setWidth(10);//  Loại dịch vụ,
-    //ws.column(27).setWidth(10);// Bản tin đến,
-    //ws.column(28).setWidth(15);//  Bản tin phản hồi,
-    //ws.column(29).setWidth(15);//  Loại giao dịch,
-    //ws.column(30).setWidth(15);// A La Carte,
-    //ws.column(31).setWidth(20);// Ngày bắt đầu gói cước,
-    //ws.column(32).setWidth(20);// Ngày kết thsuc gói cước,
-    //ws.column(33).setWidth(15);// Trạng thái,
-    //ws.column(34).setWidth(20);// Lý do,
-    //ws.column(35).setWidth(25);// Chi tiết,
+    //ws.column(11).setWidth(20);//  Thời gian bắt đầu ĐK,
+    //ws.column(12).setWidth(15);//  Gói cước,
+    //ws.column(13).setWidth(10);//  Loại chu kỳ,
+    //ws.column(14).setWidth(15);// Chu kỳ hiện tại,
+    //ws.column(15).setWidth(15);//  Số lần đã ĐK trong ngày,
+    //ws.column(16).setWidth(20);//  Thời gian thay đổi gần nhất,
+    //ws.column(17).setWidth(20);// Thời gian hết hạn chu kỳ,
+    //ws.column(18).setWidth(15);// Trạng thái,
+    //ws.column(19).setWidth(10);// Action,
 }
 
 //chuẩn bị file excel
@@ -446,7 +456,7 @@ async function prepareExxcel(callback) {
         await writeToXcell(1, Number.parseInt(i) + 1, headeTitle + "-" + header[i]);
     }
     */
-    mainHeader = defaultHeader;
+    mainHeader = [...defaultHeader];
     await mainWindow.webContents.send(crawlCommand.log, "puppeteeer file ouput tên là  " + fileNamexlxs);
     ws.row(1).setHeight(defaultHeight);
     startStartIndex = 0;
@@ -476,14 +486,14 @@ async function readFile(callback) {
 
     let workbook = XLSX.readFile(directionToSource);//
     let sheet_name_list = workbook.SheetNames; // laasy cacs sheet
-    data = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]); //if you have multiple sheets
+    let indata = XLSX.utils.sheet_to_json(workbook.Sheets[sheet_name_list[0]]); //if you have multiple sheets
 
-    if (data == '' || data == null) {
+    if (indata == '' || indata == null) {
         await mainWindow.webContents.send(crawlCommand.readErrorNull, fileNametxtRemoveExxtension);
     } else {
         tResult = [];
         //assync 1 mảng
-        await asyncReadFileExcel(data, function (item) {
+        await asyncReadFileExcel(indata, function (item) {
             tResult.push(item);
         })
         console.log(tResult);
@@ -503,7 +513,7 @@ async function readFile(callback) {
     // fs.readFile(directionToSource, 'utf-8', async (err, data) => {
 
     //     // Change how to handle the file content
-    //     if (data == '' || data == null) {
+    //     if (indata == '' || indata == null) {
     //         await mainWindow.webContents.send(crawlCommand.readErrorNull, fileNametxt);
     //     } else {
 
@@ -616,8 +626,6 @@ function doLogin(_username, _password) {
 
         await mainWindow.webContents.send(crawlCommand.loginSuccess, 2);
         await mainWindow.webContents.send(crawlCommand.log, 'doLogin');
-
-
 
         pageLogin.setViewport({ width: 2600, height: 3800 });
 
@@ -748,7 +756,7 @@ async function doCrawl() {
 
     const start = async () => {
         await asyncForEach(inputPhoneNumberArray, startStartIndex, async (element, index) => {
-
+            curentProcerssingIndex = index;
             await mainWindow.webContents.send(crawlCommand.log, '=====================================');
             await mainWindow.webContents.send(crawlCommand.log, '=====================================');
             await mainWindow.webContents.send(crawlCommand.log, '=====================================');
@@ -762,6 +770,9 @@ async function doCrawl() {
             //gặp alert chưa biết, có lẽ là lỗi,crawl sang cái tiếp theo
 
             isRewrite = false;
+
+            defaultHeader = ["STT",
+                "Số thuê bao",];
 
             //làm mới mảng curent Data
             currentData = [...Array(0)];
@@ -782,12 +793,15 @@ async function doCrawl() {
                 element = element.substring(1, element.length);
             }
 
+            await mainWindow.webContents.send(crawlCommand.log, 'thongtin ' + thongtin);
+            await mainWindow.webContents.send(crawlCommand.log, 'data ' + data);
+            await mainWindow.webContents.send(crawlCommand.log, 'khuyenmai ' + khuyenmai);
 
             //1
             currentData.push(index + 1);// số thứ tự
             //await writeToXcell(index + rowSpacing, 1, index + 1);
             //2
-            // currentData.push(inputPhoneNumberArray[index]);//"Số thuê bao",
+            currentData.push(inputPhoneNumberArray[index]);//"Số thuê bao",
 
             //==========================================================================
             //lấy thông tin  thuê bao
@@ -814,219 +828,257 @@ async function doCrawl() {
                 return td.innerHTML;
             }));
 
-            //thông tin thuê bao đều như nhau, không lo chuyện thêm header
-            let outerIndex = index;
+            if (thongtin) {
+                //thông tin thuê bao đều như nhau, không lo chuyện thêm header
+                let outerIndex = index;
 
-            //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent  ' + elementNoNumberContent);
-            //await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent length ' + elementWrongNumberContent.length + " elementWrongNumberContent " + elementWrongNumberContent + "check " + elementWrongNumberContent[0].includes(ERROR) + "type of");
-            //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableHome  ' + dataFromTableHome);
+                //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent  ' + elementNoNumberContent);
+                //await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent length ' + elementWrongNumberContent.length + " elementWrongNumberContent " + elementWrongNumberContent + "check " + elementWrongNumberContent[0].includes(ERROR) + "type of");
+                //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableHome  ' + dataFromTableHome);
 
-            let tempOnlyNeedDay = 0;
+                let tempOnlyNeedDay = 0;
 
-            let isPass = true;
+                let isPass = true;
 
-            if (isPass && elementNoNumberContent != undefined) {
-                if (elementNoNumberContent.lenth > 0) {
-                    isPass = false;
-                    //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
-                    currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
-                }
-            }
-            if (isPass && elementWrongNumberContent != undefined) {
-                if (elementWrongNumberContent.length > 0 && elementWrongNumberContent[0].includes(ERROR)) {
-                    isPass = false;
-                    //await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent ' + elementWrongNumberContent);
-                    currentData.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
-                }
-            }
-            if (isPass && dataFromTableHome != undefined) {
-                //let currentCollumn = 2;
-                //breakPerSerrvice = 6;
-                //let limitRange = dataFromTableHome.length > 18 ? 18 : dataFromTableHome.length; // do chỉ có 3 dịch vụ => 3 * 6 = 18
-                for (let index = 0; index < dataFromTableHome.length; index++) {
-                    //dataFromTableHome
-                    if (index % 2 == 1) {//chỉ lẻ mới lấy
-                        currentData.push(dataFromTableHome[index]);
-                        //await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableHome[index]);
-                        //currentCollumn++;
+                if (isPass && elementNoNumberContent != undefined) {
+                    if (elementNoNumberContent.lenth > 0) {
+                        isPass = false;
+                        //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
+                        currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
                     }
+                }
+                if (isPass && elementWrongNumberContent != undefined) {
+                    if (elementWrongNumberContent.length > 0 && elementWrongNumberContent[0].includes(ERROR)) {
+                        isPass = false;
+                        //await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent ' + elementWrongNumberContent);
+                        currentData.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
+                    }
+                }
+                if (isPass && dataFromTableHome != undefined) {
+                    //let currentCollumn = 2;
+                    //breakPerSerrvice = 6;
+                    //let limitRange = dataFromTableHome.length > 18 ? 18 : dataFromTableHome.length; // do chỉ có 3 dịch vụ => 3 * 6 = 18
+                    // for (let index = 0; index < dataFromTableHome.length; index++) {
+                    //     //dataFromTableHome
+                    //     if (index % 2 == 1) {//chỉ lẻ mới lấy
+                    //         currentData.push(dataFromTableHome[index]);
+                    //         //await writeToXcell(outerIndex + rowSpacing, currentCollumn, dataFromTableHome[index]);
+                    //         //currentCollumn++;
+                    //     }
+                    // }
+                    // for (let index = 0; index < dataFromTableHome.length; index++) {
+                    //     if (index % 2 == 1) {//chỉ lẻ mới lấy
+                    //         currentData.push(dataFromTableHome[index]);
+                    //     }
+                    // }
+                    currentData.push(dataFromTableHome[5]);
+                    await mainWindow.webContents.send(crawlCommand.log, 'tài khoản chính ' + dataFromTableHome[5]);
+                    currentData.push(dataFromTableHome[23]);
+                    await mainWindow.webContents.send(crawlCommand.log, 'ngày hết han ' + dataFromTableHome[23]);
+                    currentData.push(dataFromTableHome[33]);
+                    nameHeader[2] = dataFromTableHome[32];
+                    //await mainWindow.webContents.send(crawlCommand.log, 'header ' + dataFromTableHome[32]);
+                    //await mainWindow.webContents.send(crawlCommand.log, 'các gói khuyến mại được tham gia ' + dataFromTableHome[33]);
                 }
             }
             //await mainWindow.webContents.send(crawlCommand.log, 'currentData ' + currentData);
 
-            //Dịch vụ 
-            await pageLogin.goto(URL.SERVICE);
+            if (data) {
+                //Dịch vụ 
+                await pageLogin.goto(URL.SERVICE);
 
-            //nhập vào số điện thoại
-            await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
-            await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+                //nhập vào số điện thoại
+                await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
+                await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
 
-            //await page.waitForFunction("document.querySelector('.wrapper') && document.querySelector('.wrapper').clientHeight != 0");
-            await timer(sleepBetwwenMain);
+                //await page.waitForFunction("document.querySelector('.wrapper') && document.querySelector('.wrapper').clientHeight != 0");
+                await timer(sleepBetwwenMain);
 
 
-            //không có thông tin số
-            elementNoNumberContent = await pageLogin.$$eval("body #ctl01 .page .main #query #MainContent_result_messages", spanData => spanData.map((span) => {
-                return span.innerHTML;
-            }));
+                //không có thông tin số
+                elementNoNumberContent = await pageLogin.$$eval("body #ctl01 .page .main #query #MainContent_result_messages", spanData => spanData.map((span) => {
+                    return span.innerHTML;
+                }));
 
-            let dataFromTableService = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView1 tr td", tableData => tableData.map((td) => {
-                return td.innerHTML;
-            }));
+                let dataFromTableService = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView1 tr td", tableData => tableData.map((td) => {
+                    return td.innerHTML;
+                }));
 
-            // await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin khách " + currentData);
+                // await mainWindow.webContents.send(crawlCommand.log, "ghi vào thông tin khách " + currentData);
 
-            //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableService  ' + dataFromTableService);
+                await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableService  ' + dataFromTableService + " dataFromTableService != null " + dataFromTableService != null);
 
-            //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent  ' + elementNoNumberContent);
-            //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableService  ' + dataFromTableService);
+                //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent  ' + elementNoNumberContent);
+                //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableService  ' + dataFromTableService);
 
-            isPass = true;
+                isPass = true;
 
-            if (isPass && elementNoNumberContent != undefined) {
-                if (elementNoNumberContent.length > 0) {
-                    isPass = false;
-                    //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
-                    currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
-                }
-            }
-            if (isPass && dataFromTableService != undefined) {
-                //listTempService = [];
-                let currentCollumn = 0;
-                //let limitRange = dataFromTableService.length > 18 ? 18 : dataFromTableService.length; // do chỉ có 3 dịch vụ => 3 * 6 = 18
-                currentServiceCount = 1;
-                for (let index = 0; index < dataFromTableService.length; index++) {
-                    //dataFromTableService
-                    if (currentCollumn > 1) {
-                        currentService.push(dataFromTableService[index]);
-                        serviceHeader.push(nameService[currentCollumn] + " " + currentServiceCount);
-                    }
-                    currentCollumn++;
-                    if (currentCollumn == 6) {
-                        currentServiceCount++;
-                        currentCollumn = 0;
+                if (isPass && elementNoNumberContent != undefined) {
+                    await mainWindow.webContents.send(crawlCommand.log, 'không có thông tin số length ' + elementNoNumberContent.length);
+                    if (elementNoNumberContent.length > 0) {
+                        isPass = false;
+                        //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
+                        currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
                     }
                 }
+                //tối đa lấy 3 dòng
+                if (isPass && dataFromTableService != undefined) {
+                    await mainWindow.webContents.send(crawlCommand.log, 'có data');
+                    //listTempService = [];
+                    let currentCollumn = 0;
+                    //let limitRange = dataFromTableService.length > 18 ? 18 : dataFromTableService.length; // do chỉ có 3 dịch vụ => 3 * 6 = 18
+                    currentServiceCount = 1;
+                    for (let index = 0; index < dataFromTableService.length; index++) {
+                        if (currentServiceCount > 3) {
+                            break;
+                        }
+                        //dataFromTableService
+                        if (currentCollumn > 1) {
+                            currentService.push(dataFromTableService[index]);
+                            serviceHeader.push(nameService[currentCollumn] + " " + currentServiceCount);
+                        }
+                        currentCollumn++;
+                        if (currentCollumn == 6) {
+                            currentServiceCount++;
+                            currentCollumn = 0;
+                        }
+                    }
+                } else {
+                    serviceHeader = [...nameDiscount];
+                }
             }
-
-            //await mainWindow.webContents.send(crawlCommand.log, 'currentService ' + currentService);
-            //await mainWindow.webContents.send(crawlCommand.log, 'serviceHeader ' + serviceHeader);
+            await mainWindow.webContents.send(crawlCommand.log, 'currentService ' + currentService);
+            await mainWindow.webContents.send(crawlCommand.log, 'serviceHeader ' + serviceHeader);
 
             //==========================================================================
+            if (khuyenmai) {
+                //khuyến mại
+                await pageLogin.goto(URL.DISCOUNT);
+                //nhập vào số điện thoại
+                await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
+                await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
 
-            //khuyến mại
-            await pageLogin.goto(URL.DISCOUNT);
-            //nhập vào số điện thoại
-            await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
-            await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+                //await page.waitForFunction("document.querySelector('.wrapper') && document.querySelector('.wrapper').clientHeight != 0");
+                await timer(sleepBetwwenMain);
 
-            //await page.waitForFunction("document.querySelector('.wrapper') && document.querySelector('.wrapper').clientHeight != 0");
-            await timer(sleepBetwwenMain);
+                let dataFromTableDiscount1 = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView1 tr td", tableData => tableData.map((td) => {
+                    return td.innerHTML;
+                }));
 
-            let dataFromTableDiscount1 = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView1 tr td", tableData => tableData.map((td) => {
-                return td.innerHTML;
-            }));
+                //bỏ qua bảng thứ 2
+                // let dataFromTableDiscount2 = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView2 tr td", tableData => tableData.map((td) => {
+                //     return td.innerHTML;
+                // }));
 
-            let dataFromTableDiscount2 = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView2 tr td", tableData => tableData.map((td) => {
-                return td.innerHTML;
-            }));
+                //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount1 ' + dataFromTableDiscount1.length);
+                //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount2 ' + dataFromTableDiscount2.length);
 
-            //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount1 ' + dataFromTableDiscount1.length);
-            //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount2 ' + dataFromTableDiscount2.length);
+                //không có thông tin số
+                elementNoNumberContent = await pageLogin.$$eval("body #ctl01 .page .main #query #MainContent_result_check", spanData => spanData.map((span) => {
+                    return span.innerHTML;
+                }));
 
-            //không có thông tin số
-            elementNoNumberContent = await pageLogin.$$eval("body #ctl01 .page .main #query #MainContent_result_check", spanData => spanData.map((span) => {
-                return span.innerHTML;
-            }));
+                //số bị sai
+                elementWrongNumberContent = await pageLogin.$$eval("body span h1", spanData => spanData.map((span) => {
+                    return span.innerHTML;
+                }));
 
-            //số bị sai
-            elementWrongNumberContent = await pageLogin.$$eval("body span h1", spanData => spanData.map((span) => {
-                return span.innerHTML;
-            }));
+                await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent  ' + elementNoNumberContent);
+                await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent  ' + elementWrongNumberContent);
 
-            //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent  ' + elementNoNumberContent);
-            //await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent  ' + elementWrongNumberContent);
+                isPass = true;
 
-            isPass = true;
-
-            if (isPass && elementNoNumberContent != undefined) {
-                if (elementNoNumberContent.length > 0) {
-                    isPass = false;
-                    //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
-                    currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
-                }
-            }
-            if (isPass && elementWrongNumberContent != undefined) {
-                if (elementWrongNumberContent.length > 0 && elementWrongNumberContent[0].includes(ERROR)) {
-                    isPass = false;
-                    //await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent ' + elementNoNumberContent);
-                    currentData.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
-                }
-            }
-            if (isPass) {
-                //1 không trống
-                if (dataFromTableDiscount1.length > 0) {
-                    //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount1 không trống');
-                    let currentCollumn = 0;
-                    currentDiscountCount = 1;
-                    for (let index = 0; index < dataFromTableDiscount1.length; index++) {
-                        //dataFromTableDiscount1
-                        if (currentCollumn > 0) {
-                            currentDiscount1.push(dataFromTableDiscount1[index]);
-                            discountHeader1.push(nameDiscount1[currentCollumn] + " " + currentDiscountCount);
-                        }
-                        currentCollumn++;
-                        if (currentCollumn == 12) {
-                            currentDiscountCount++;
-                            currentCollumn = 0;
-                        }
+                if (isPass && elementNoNumberContent != undefined) {
+                    if (elementNoNumberContent.length > 0) {
+                        isPass = false;
+                        //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
+                        currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
                     }
                 }
-
-                //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount1  ' + dataFromTableDiscount1);
-
-                if (dataFromTableDiscount2.length > 0) {
-                    //listTempDiscount = [];
-                    let currentCollumn = 0;
-                    currentDiscountCount = 1;
-                    for (let index = 0; index < dataFromTableDiscount2.length; index++) {
-                        //dataFromTableDiscount1
-                        if (currentCollumn > 0) {
-                            currentDiscount2.push(dataFromTableDiscount2[index]);
-                            discountHeader2.push(nameDiscount2[currentCollumn] + " " + currentDiscountCount);
-                        }
-                        currentCollumn++;
-                        if (currentCollumn == 12) {
-                            currentDiscountCount++;
-                            currentCollumn = 0;
-                        }
+                if (isPass && elementWrongNumberContent != undefined) {
+                    if (elementWrongNumberContent.length > 0 && elementWrongNumberContent[0].includes(ERROR)) {
+                        isPass = false;
+                        //await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent ' + elementNoNumberContent);
+                        currentData.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
                     }
+                }
+                if (isPass) {
+                    //1 không trống
+                    if (dataFromTableDiscount1.length > 0) {
+                        //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount1 không trống');
+                        let currentCollumn = 0;
+                        currentDiscountCount = 1;
+                        for (let index = 0; index < dataFromTableDiscount1.length; index++) {
+                            //dataFromTableDiscount1
+                            if (currentCollumn > 0) {
+                                currentDiscount1.push(dataFromTableDiscount1[index]);
+                                discountHeader1.push(nameDiscount[currentCollumn] + " " + currentDiscountCount);
+                            }
+                            currentCollumn++;
+                            if (currentCollumn == 10) {
+                                currentDiscountCount++;
+                                currentCollumn = 0;
+                            }
+                            if (currentDiscountCount > 5) {
+                                break;
+                            }
+                        }
+                    } else {
+                        discountHeader1 = [...nameDiscount];
+                    }
+
+                    //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount1  ' + dataFromTableDiscount1);
+                    //bỏ qua bảng bên dưới
+                    // if (dataFromTableDiscount2.length > 0) {
+                    //     //listTempDiscount = [];
+                    //     let currentCollumn = 0;
+                    //     currentDiscountCount = 1;
+                    //     for (let index = 0; index < dataFromTableDiscount2.length; index++) {
+                    //         //dataFromTableDiscount1
+                    //         if (currentCollumn > 0) {
+                    //             currentDiscount2.push(dataFromTableDiscount2[index]);
+                    //             discountHeader2.push(nameDiscount2[currentCollumn] + " " + currentDiscountCount);
+                    //         }
+                    //         currentCollumn++;
+                    //         if (currentCollumn == 12) {
+                    //             currentDiscountCount++;
+                    //             currentCollumn = 0;
+                    //         }
+                    //     }
+                    // }
                 }
             }
 
             //await mainWindow.webContents.send(crawlCommand.log, 'currentDiscount ' + currentDiscount);
             //await mainWindow.webContents.send(crawlCommand.log, 'discountHeader ' + discountHeader);
             //==========================================================================
+            //if (thongtin) {
             unitExcel.push([...currentData]);
-            serviceExcel.push([...currentService]);
-            //discount1 không rỗng
-            if (dataFromTableDiscount1 != null) {
-                if (discountExcel1.length == 0) {
-                    //nghĩa là số điện thoại hiện tại có giảm giá 1,nhưng đây là số đầu tiên có => lần lượt push mảng rỗng vào các số trước
-                    for (var k = discountExcel1.length; k < index; k++) {
-                        discountExcel1.push([...Array(0)]);
-                    }
-                }
-                discountExcel1.push([...currentDiscount1]);
-            } else {
-                //nếu trước đây mà đã có số điện thoại nào có giảm giá 1, thêm array rỗng
-                if (discountExcel1.length > 0) {
-                    discountExcel1.push([...Array(0)]);
-                }
-                //nếu trước đây mà chưa có số điện thoại nào có giảm giá 1, không cần thêm
+            //}
+            if (data) {
+                serviceExcel.push([...currentService]);
             }
+            if (khuyenmai) {
+                discountExcel1.push([...currentDiscount1]);
+            }
+            //discount1 không rỗng --- bản cũ, khi mà có số không có discount 1 có discount 2, có số lại có cả disocunt 1 và discount 2 
+            // if (dataFromTableDiscount1 != null) {
+            //     if (discountExcel1.length == 0) {
+            //         //nghĩa là số điện thoại hiện tại có giảm giá 1,nhưng đây là số đầu tiên có => lần lượt push mảng rỗng vào các số trước
+            //         for (var k = discountExcel1.length; k < index; k++) {
+            //             discountExcel1.push([...Array(0)]);
+            //         }
+            //     }
+            //     discountExcel1.push([...currentDiscount1]);
+            // } else {
+            //     //nếu trước đây mà đã có số điện thoại nào có giảm giá 1, thêm array rỗng
+            //     if (discountExcel1.length > 0) {
+            //         discountExcel1.push([...Array(0)]);
+            //     }
+            //     //nếu trước đây mà chưa có số điện thoại nào có giảm giá 1, không cần thêm
+            // }
 
-            discountExcel2.push([...currentDiscount2]);
+            //discountExcel2.push([...currentDiscount2]);
 
             let currentIndexHeader = 19;
 
@@ -1038,20 +1090,25 @@ async function doCrawl() {
             //await mainWindow.webContents.send(crawlCommand.log, 'currentServiceCount ' + currentServiceCount);
             //await mainWindow.webContents.send(crawlCommand.log, 'serviceHeader length ' + serviceHeader.length);
             //await mainWindow.webContents.send(crawlCommand.log, 'defaultServiceHeader length ' + defaultServiceHeader.length);
-            if (serviceHeader.length > defaultServiceHeader.length) {
+            if (thongtin) {
                 isRewrite = true;
-                defaultServiceHeader = [...Array(0)];
-                defaultServiceHeader = [...serviceHeader];
-                /*
-                serviceHeader.forEach((item, index) => {
-                    ws.column(currentIndexHeader).setWidth(25);
-                    currentIndexHeader++;
-                });
-                */
-                //await mainWindow.webContents.send(crawlCommand.log, 'after serviceHeader length ' + serviceHeader.length);
-                //await mainWindow.webContents.send(crawlCommand.log, 'after defaultServiceHeader length ' + defaultServiceHeader.length);
             }
+            if (data) {
+                if (serviceHeader.length > defaultServiceHeader.length) {
+                    isRewrite = true;
+                    defaultServiceHeader = [...Array(0)];
+                    defaultServiceHeader = [...serviceHeader];
 
+                    /*
+                    serviceHeader.forEach((item, index) => {
+                        ws.column(currentIndexHeader).setWidth(25);
+                        currentIndexHeader++;
+                    });
+                    */
+                    await mainWindow.webContents.send(crawlCommand.log, 'after serviceHeader length ' + serviceHeader.length);
+                    await mainWindow.webContents.send(crawlCommand.log, 'after defaultServiceHeader length ' + defaultServiceHeader.length);
+                }
+            }
             // serviceExcel = serviceExcel.map(async (item, index) => {
             //     //thêm service thiếu
             //     let tempService = [...Array(0)];
@@ -1072,77 +1129,84 @@ async function doCrawl() {
             //await mainWindow.webContents.send(crawlCommand.log, 'discountHeader2 length ' + discountHeader2.length);
             //await mainWindow.webContents.send(crawlCommand.log, 'defaultDiscountHeader1 length ' + defaultDiscountHeader1.length);
             //await mainWindow.webContents.send(crawlCommand.log, 'defaultDiscountHeader2 length ' + defaultDiscountHeader2.length);
-            if (discountHeader1.length > defaultDiscountHeader1.length) {
-                isRewrite = true;
-                defaultDiscountHeader1 = [...Array(0)];
-                defaultDiscountHeader1 = [...discountHeader1];
-                /*
-                discountHeader.forEach((item, index) => {
-                    ws.column(currentIndexHeader).setWidth(25);
-                    currentIndexHeader++;
-                });
-                */
-                //await mainWindow.webContents.send(crawlCommand.log, 'after discountHeader1 length ' + discountHeader1.length);
-                //await mainWindow.webContents.send(crawlCommand.log, 'after defaultDiscountHeader1 length ' + defaultDiscountHeader1.length);
+            if (khuyenmai) {
+                if (discountHeader1.length > defaultDiscountHeader1.length) {
+                    isRewrite = true;
+                    defaultDiscountHeader1 = [...Array(0)];
+                    defaultDiscountHeader1 = [...discountHeader1];
+                    /*
+                    discountHeader.forEach((item, index) => {
+                        ws.column(currentIndexHeader).setWidth(25);
+                        currentIndexHeader++;
+                    });
+                    */
+                    await mainWindow.webContents.send(crawlCommand.log, 'after discountHeader1 length ' + discountHeader1.length);
+                    await mainWindow.webContents.send(crawlCommand.log, 'after defaultDiscountHeader1 length ' + defaultDiscountHeader1.length);
+                }
             }
+            //bỏ qua bảng bên dưới
 
-            if (discountHeader2.length > defaultDiscountHeader2.length) {
-                isRewrite = true;
-                defaultDiscountHeader2 = [...Array(0)];
-                defaultDiscountHeader2 = [...discountHeader2];
-                /*
-                discountHeader.forEach((item, index) => {
-                    ws.column(currentIndexHeader).setWidth(25);
-                    currentIndexHeader++;
-                });
-                */
-                //await mainWindow.webContents.send(crawlCommand.log, 'after discountHeader2 length ' + discountHeader2.length);
-                //await mainWindow.webContents.send(crawlCommand.log, 'after defaultDiscountHeader2 length ' + defaultDiscountHeader2.length);
-            }
+            //if (discountHeader2.length > defaultDiscountHeader2.length) {
+            //     isRewrite = true;
+            //    defaultDiscountHeader2 = [...Array(0)];
+            //    defaultDiscountHeader2 = [...discountHeader2];
+            /*
+            discountHeader.forEach((item, index) => {
+                ws.column(currentIndexHeader).setWidth(25);
+                currentIndexHeader++;
+            });
+            */
+            //await mainWindow.webContents.send(crawlCommand.log, 'after discountHeader2 length ' + discountHeader2.length);
+            //await mainWindow.webContents.send(crawlCommand.log, 'after defaultDiscountHeader2 length ' + defaultDiscountHeader2.length);
+            //}
 
-            if (isRewrite = true) {
+            //đay là bản cũ
+            if (isRewrite == true) {
 
-                serviceExcel = await Promise.all(serviceExcel.map(async (item, index) => {
-                    //thêm service thiếu
-                    let tempService = [...Array(0)];
-                    if (item.length < defaultServiceHeader.length) {
-                        for (var j = item.length; j < defaultServiceHeader.length; j++) {
-                            tempService.push("");
+                if (data) {
+                    serviceExcel = await Promise.all(serviceExcel.map(async (item, index) => {
+                        //thêm service thiếu
+                        let tempService = [...Array(0)];
+                        if (item.length < defaultServiceHeader.length) {
+                            for (var j = item.length; j < defaultServiceHeader.length; j++) {
+                                tempService.push("");
+                            }
                         }
-                    }
-                    item = item.concat(tempService);
-                    //await mainWindow.webContents.send(crawlCommand.log, 'service number ' + index + " add " + tempService.length + " item " + tempService);
-                    //await mainWindow.webContents.send(crawlCommand.log, 'service number ' + index + " after added length " + item.length + " item " + item);
-                    return item;
-                }));
-
-                discountExcel1 = await Promise.all(discountExcel1.map(async (item, index) => {
-                    //thêm discount thiếu
-                    let tempDiscount = [...Array(0)];
-                    if (item.length < defaultDiscountHeader1.length) {
-                        for (var j = item.length; j < defaultDiscountHeader1.length; j++) {
-                            tempDiscount.push("");
+                        item = item.concat(tempService);
+                        //await mainWindow.webContents.send(crawlCommand.log, 'service number ' + index + " add " + tempService.length + " item " + tempService);
+                        //await mainWindow.webContents.send(crawlCommand.log, 'service number ' + index + " after added length " + item.length + " item " + item);
+                        return item;
+                    }));
+                }
+                if (khuyenmai) {
+                    discountExcel1 = await Promise.all(discountExcel1.map(async (item, index) => {
+                        //thêm discount thiếu
+                        let tempDiscount = [...Array(0)];
+                        if (item.length < defaultDiscountHeader1.length) {
+                            for (var j = item.length; j < defaultDiscountHeader1.length; j++) {
+                                tempDiscount.push("");
+                            }
                         }
-                    }
-                    item = item.concat(tempDiscount);
-                    //await mainWindow.webContents.send(crawlCommand.log, 'discount header 1 number ' + index + " add " + tempDiscount);
-                    return item;
-                }));
-
+                        item = item.concat(tempDiscount);
+                        //await mainWindow.webContents.send(crawlCommand.log, 'discount header 1 number ' + index + " add " + tempDiscount);
+                        return item;
+                    }));
+                }
                 //await mainWindow.webContents.send(crawlCommand.log, 'discountExcel1 ' + JSON.stringify(discountExcel1));
 
-                discountExcel2 = await Promise.all(discountExcel2.map(async (item, index) => {
-                    //thêm discount thiếu
-                    let tempDiscount = [...Array(0)];
-                    if (item.length < defaultDiscountHeader2.length) {
-                        for (var j = item.length; j < defaultDiscountHeader2.length; j++) {
-                            tempDiscount.push("");
-                        }
-                    }
-                    item = item.concat(tempDiscount);
-                    //await mainWindow.webContents.send(crawlCommand.log, 'discount header 2 number ' + index + " add " + tempDiscount);
-                    return item;
-                }));
+                //bỏ đi bảng dưới
+                // discountExcel2 = await Promise.all(discountExcel2.map(async (item, index) => {
+                //     //thêm discount thiếu
+                //     let tempDiscount = [...Array(0)];
+                //     if (item.length < defaultDiscountHeader2.length) {
+                //         for (var j = item.length; j < defaultDiscountHeader2.length; j++) {
+                //             tempDiscount.push("");
+                //         }
+                //     }
+                //     item = item.concat(tempDiscount);
+                //     //await mainWindow.webContents.send(crawlCommand.log, 'discount header 2 number ' + index + " add " + tempDiscount);
+                //     return item;
+                // }));
 
                 //await mainWindow.webContents.send(crawlCommand.log, 'discountExcel2 ' + JSON.stringify(discountExcel2));
 
@@ -1157,10 +1221,10 @@ async function doCrawl() {
                     ws.column(currentIndexHeader).setWidth(25);
                     currentIndexHeader++;
                 });
-                discountHeader2.forEach((item, index) => {
-                    ws.column(currentIndexHeader).setWidth(25);
-                    currentIndexHeader++;
-                });
+                // discountHeader2.forEach((item, index) => {
+                //     ws.column(currentIndexHeader).setWidth(25);
+                //     currentIndexHeader++;
+                // });
             }
             //await mainWindow.webContents.send(crawlCommand.log, 'after adding ');
             //await mainWindow.webContents.send(crawlCommand.log, 'unitExcel ' + JSON.stringify(unitExcel));
@@ -1177,34 +1241,46 @@ async function doCrawl() {
                     //lần chạy cuối cùng
                     //ghi header
                     try {
-                        if (isRewrite = true) {
+                        if (isRewrite == true) {
                             let indexCurrentHeader = 0;
+                            //await mainWindow.webContents.send(crawlCommand.log, 'defaultHeader length ',defaultHeader);
+                            if (thongtin) {
+                                //await mainWindow.webContents.send(crawlCommand.log, 'thong tin true ');
+                                if (defaultHeader.length == 2) {
+                                    defaultHeader = defaultHeader.concat(nameHeader);
+                                    //await mainWindow.webContents.send(crawlCommand.log, 'defaultHeader after concat ',defaultHeader);
+                                }
+                            }
                             defaultHeader.forEach(async (item, index) => {
                                 indexCurrentHeader++;
                                 await writeToXcell(1, Number.parseInt(indexCurrentHeader), headeTitle + "-" + item);
-                                //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào header ' + (1) + " " + Number.parseInt(indexCurrentHeader) + " " + headeTitle + "-" + item);
+                                await mainWindow.webContents.send(crawlCommand.log, 'ghi vào header ' + (1) + " " + Number.parseInt(indexCurrentHeader) + " " + headeTitle + "-" + item);
                             });
-                            defaultServiceHeader.forEach(async (item, index) => {
-                                indexCurrentHeader++;
-                                //if (index > 1) {//bỏ qua so thứ tự và số điện thoại
-                                await writeToXcell(1, Number.parseInt(indexCurrentHeader), headeTitle + "-" + item);
-                                //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào header ' + (1) + " " + Number.parseInt(indexCurrentHeader) + " " + headeTitle + "-" + item);
-                                //}
-                            });
-                            defaultDiscountHeader1.forEach(async (item, index) => {
-                                indexCurrentHeader++;
-                                //if (index > 0) {//bỏ qua so dien thoai
-                                await writeToXcell(1, Number.parseInt(indexCurrentHeader), headeTitle + "-" + item);
-                                //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào header ' + (1) + " " + Number.parseInt(indexCurrentHeader) + " " + headeTitle + "-" + item);
-                                //}
-                            });
-                            defaultDiscountHeader2.forEach(async (item, index) => {
-                                indexCurrentHeader++;
-                                //if (index > 0) {//bỏ qua so dien thoai
-                                await writeToXcell(1, Number.parseInt(indexCurrentHeader), headeTitle + "-" + item);
-                                //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào header ' + (1) + " " + Number.parseInt(indexCurrentHeader) + " " + headeTitle + "-" + item);
-                                //}
-                            });
+                            if (data) {
+                                defaultServiceHeader.forEach(async (item, index) => {
+                                    indexCurrentHeader++;
+                                    //if (index > 1) {//bỏ qua so thứ tự và số điện thoại
+                                    await writeToXcell(1, Number.parseInt(indexCurrentHeader), headeTitle + "-" + item);
+                                    await mainWindow.webContents.send(crawlCommand.log, 'ghi vào header service ' + (1) + " " + Number.parseInt(indexCurrentHeader) + " " + headeTitle + "-" + item);
+                                    //}
+                                });
+                            }
+                            if (khuyenmai) {
+                                defaultDiscountHeader1.forEach(async (item, index) => {
+                                    indexCurrentHeader++;
+                                    //if (index > 0) {//bỏ qua so dien thoai
+                                    await writeToXcell(1, Number.parseInt(indexCurrentHeader), headeTitle + "-" + item);
+                                    await mainWindow.webContents.send(crawlCommand.log, 'ghi vào header Discount' + (1) + " " + Number.parseInt(indexCurrentHeader) + " " + headeTitle + "-" + item);
+                                    //}
+                                });
+                            }
+                            // defaultDiscountHeader2.forEach(async (item, index) => {
+                            //     indexCurrentHeader++;
+                            //     //if (index > 0) {//bỏ qua so dien thoai
+                            //     await writeToXcell(1, Number.parseInt(indexCurrentHeader), headeTitle + "-" + item);
+                            //     //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào header ' + (1) + " " + Number.parseInt(indexCurrentHeader) + " " + headeTitle + "-" + item);
+                            //     //}
+                            // });
                         }
                     } catch (e) {
                         await mainWindow.webContents.send(crawlCommand.log, 'error when writing header ' + e);
@@ -1230,55 +1306,59 @@ async function doCrawl() {
                             //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào excel unit ' + (j + rowSpacing) + " " + Number.parseInt(indexCurrent) + " " + item);
                         });
                         //await mainWindow.webContents.send(crawlCommand.log, 'write service '+serviceExcel[j].length);
-                        serviceExcel[j].forEach(async (item, index) => {
-                            indexCurrent++;
-                            //if (index <= 1) {
-                            //await writeToXcell(j + rowSpacing, Number.parseInt(indexCurrent), "Dich vu");
-                            //} else {
-                            //await mainWindow.webContents.send(crawlCommand.log, 'index inside serviceExcel ' + indexCurrent);
-                            if (item == "&nbsp;") {
-                                await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), noneName);
-                            } else {
-                                await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), item);
-                            }
-                            //}
-                            //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào excel service ' + (j + rowSpacing) + " " + Number.parseInt(indexCurrent) + " " + item);
-
-                        });
-                        //await mainWindow.webContents.send(crawlCommand.log, 'write discount 1 ');
-                        if (discountExcel1[j] != undefined) {
-                            discountExcel1[j].forEach(async (item, index) => {
+                        if (data) {
+                            serviceExcel[j].forEach(async (item, index) => {
                                 indexCurrent++;
-                                //if (index == 0) {
-                                // await writeToXcell(j + rowSpacing, Number.parseInt(indexCurrent), "Khuyen mai");
+                                //if (index <= 1) {
+                                //await writeToXcell(j + rowSpacing, Number.parseInt(indexCurrent), "Dich vu");
                                 //} else {
-                                //await mainWindow.webContents.send(crawlCommand.log, 'index inside discountExcel ' + indexCurrent);
+                                //await mainWindow.webContents.send(crawlCommand.log, 'index inside serviceExcel ' + indexCurrent);
                                 if (item == "&nbsp;") {
                                     await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), noneName);
                                 } else {
                                     await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), item);
                                 }
                                 //}
-                                //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào excel discount ' + (j + rowSpacing) + " " + Number.parseInt(indexCurrent) + " " + item);
+                                //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào excel service ' + (j + rowSpacing) + " " + Number.parseInt(indexCurrent) + " " + item);
+
                             });
+                        }
+                        //await mainWindow.webContents.send(crawlCommand.log, 'write discount 1 ');
+                        if (khuyenmai) {
+                            if (discountExcel1[j] != undefined) {
+                                discountExcel1[j].forEach(async (item, index) => {
+                                    indexCurrent++;
+                                    //if (index == 0) {
+                                    // await writeToXcell(j + rowSpacing, Number.parseInt(indexCurrent), "Khuyen mai");
+                                    //} else {
+                                    //await mainWindow.webContents.send(crawlCommand.log, 'index inside discountExcel ' + indexCurrent);
+                                    if (item == "&nbsp;") {
+                                        await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), noneName);
+                                    } else {
+                                        await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), item);
+                                    }
+                                    //}
+                                    //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào excel discount ' + (j + rowSpacing) + " " + Number.parseInt(indexCurrent) + " " + item);
+                                });
+                            }
                         }
                         //await mainWindow.webContents.send(crawlCommand.log, 'write discount 2 ');
-                        if (discountExcel2[j] != undefined) {
-                            discountExcel2[j].forEach(async (item, index) => {
-                                indexCurrent++;
-                                //if (index == 0) {
-                                // await writeToXcell(j + rowSpacing, Number.parseInt(indexCurrent), "Khuyen mai");
-                                //} else {
-                                //await mainWindow.webContents.send(crawlCommand.log, 'index inside discountExcel ' + indexCurrent);
-                                if (item == "&nbsp;") {
-                                    await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), noneName);
-                                } else {
-                                    await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), item);
-                                }
-                                //}
-                                //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào excel discount ' + (j + rowSpacing) + " " + Number.parseInt(indexCurrent) + " " + item);
-                            });
-                        }
+                        // if (discountExcel2[j] != undefined) {
+                        //     discountExcel2[j].forEach(async (item, index) => {
+                        //         indexCurrent++;
+                        //         //if (index == 0) {
+                        //         // await writeToXcell(j + rowSpacing, Number.parseInt(indexCurrent), "Khuyen mai");
+                        //         //} else {
+                        //         //await mainWindow.webContents.send(crawlCommand.log, 'index inside discountExcel ' + indexCurrent);
+                        //         if (item == "&nbsp;") {
+                        //             await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), noneName);
+                        //         } else {
+                        //             await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), item);
+                        //         }
+                        //         //}
+                        //         //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào excel discount ' + (j + rowSpacing) + " " + Number.parseInt(indexCurrent) + " " + item);
+                        //     });
+                        // }
                     }
 
                 }
@@ -1290,6 +1370,8 @@ async function doCrawl() {
             }
             catch (err) {
                 await mainWindow.webContents.send(crawlCommand.log, 'lỗi  ' + err);
+                //await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + counterIndexNotFound);//số thứ tự
+                await writeToXcell(curentProcerssingIndex + rowSpacing, 1, errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
             }
 
         });
@@ -1323,4 +1405,19 @@ ipcMain.on(crawlCommand.login, async function (e, item) {
     username = item.split(" ")[0];
     password = item.split(" ")[1];
     doLogin(username, password);
+});
+
+//thongtin
+ipcMain.on(crawlCommand.thongtin, async function (e, item) {
+    thongtin = item;
+});
+
+//data 
+ipcMain.on(crawlCommand.data, async function (e, item) {
+    data = item;
+});
+
+//khuyenmai 
+ipcMain.on(crawlCommand.khuyenmai, async function (e, item) {
+    khuyenmai = item;
 });
