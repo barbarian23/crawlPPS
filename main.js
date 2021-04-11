@@ -840,20 +840,40 @@ async function doCrawl() {
 
                 let isPass = true;
 
-                if (isPass && elementNoNumberContent != undefined) {
-                    if (elementNoNumberContent.lenth > 0) {
-                        isPass = false;
-                        //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
-                        currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
+                let retryCount = 0;
+
+                while (isPass && elementNoNumberContent != undefined && retryCount == 3) {
+                    if (isPass && elementNoNumberContent != undefined) {
+                        if (elementNoNumberContent.length > 0) {
+                            retryCount++;
+                            //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
+                            await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
+                            await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+                            await timer(sleepBetwwenMain);
+                        }
                     }
                 }
-                if (isPass && elementWrongNumberContent != undefined) {
-                    if (elementWrongNumberContent.length > 0 && elementWrongNumberContent[0].includes(ERROR)) {
-                        isPass = false;
-                        //await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent ' + elementWrongNumberContent);
-                        currentData.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
+
+                if (retryCount == 3) {
+                    currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
+                    isPass = false;
+                }
+
+                retryCount = 0;
+                while (isPass && elementNoNumberContent != undefined && retryCount == 3) {
+                    if (isPass && elementWrongNumberContent != undefined) {
+                        if (elementWrongNumberContent.length > 0 && elementWrongNumberContent[0].includes(ERROR)) {
+                            retryCount++;
+                            await timer(sleepBetwwenMain);
+                        }
                     }
                 }
+
+                if (retryCount == 3) {
+                    currentData.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
+                    isPass = false;
+                }
+
                 if (isPass && dataFromTableHome != undefined) {
                     //let currentCollumn = 2;
                     //breakPerSerrvice = 6;
@@ -913,14 +933,27 @@ async function doCrawl() {
 
                 isPass = true;
 
-                if (isPass && elementNoNumberContent != undefined) {
-                    await mainWindow.webContents.send(crawlCommand.log, 'không có thông tin số length ' + elementNoNumberContent.length);
-                    if (elementNoNumberContent.length > 0) {
-                        isPass = false;
-                        //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
-                        currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
+                let retryCount = 0;
+
+                while (isPass && elementNoNumberContent != undefined && retryCount == 3) {
+                    if (isPass && elementNoNumberContent != undefined) {
+                        //await mainWindow.webContents.send(crawlCommand.log, 'không có thông tin số length ' + elementNoNumberContent.length);
+                        if (elementNoNumberContent.length > 0) {
+                            retryCount++;
+                            await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
+                            await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+                            await timer(sleepBetwwenMain);
+                        }
                     }
                 }
+
+                if (retryCount == 3) {
+                    isPass = false;
+                    //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
+                    currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
+                }
+
+
                 //tối đa lấy 3 dòng
                 if (isPass && dataFromTableService != undefined) {
                     await mainWindow.webContents.send(crawlCommand.log, 'có data');
@@ -987,21 +1020,41 @@ async function doCrawl() {
                 await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent  ' + elementWrongNumberContent);
 
                 isPass = true;
+                let retryCount = 0;
+                while (isPass && elementNoNumberContent != undefined && retryCount == 3) {
+                    if (isPass && elementNoNumberContent != undefined) {
+                        if (elementNoNumberContent.length > 0) {
+                            retryCount++;
+                            await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
+                            await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+                            await timer(sleepBetwwenMain);
+                        }
+                    }
+                }
 
-                if (isPass && elementNoNumberContent != undefined) {
-                    if (elementNoNumberContent.length > 0) {
-                        isPass = false;
-                        //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
-                        currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
+                if (retryCount == 3) {
+                    currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
+                    isPass = false;
+                }
+
+                retryCount = 0;
+
+                while (isPass && elementWrongNumberContent != undefined && retryCount == 3) {
+                    if (isPass && elementWrongNumberContent != undefined) {
+                        if (elementWrongNumberContent.length > 0 && elementWrongNumberContent[0].includes(ERROR)) {
+                            retryCount++;
+                            await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
+                            await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+                            await timer(sleepBetwwenMain);
+                        }
                     }
                 }
-                if (isPass && elementWrongNumberContent != undefined) {
-                    if (elementWrongNumberContent.length > 0 && elementWrongNumberContent[0].includes(ERROR)) {
-                        isPass = false;
-                        //await mainWindow.webContents.send(crawlCommand.log, 'elementWrongNumberContent ' + elementNoNumberContent);
-                        currentData.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
-                    }
+
+                if (retryCount == 3) {
+                    currentData.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
+                    isPass = false;
                 }
+
                 if (isPass) {
                     //1 không trống
                     if (dataFromTableDiscount1.length > 0) {

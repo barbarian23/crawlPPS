@@ -83,6 +83,8 @@ ipcRenderer.on("crawl:error_choose_not_chrome", (e, item) => {
     }
 });
 
+
+
 ipcRenderer.on(crawlCommand.result, (e, item) => {
     if (crawling == true) {
         crawling = false;
