@@ -34,6 +34,7 @@ var optionPuppeteer = {
 let mainWindow;
 var mainBrowser = null;
 var exPath = '';
+//C:\Program Files\Google\Chrome\Application\\chrome.exe
 //C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe
 //C:\\Users\\Administrator\\AppData\\Local\\CocCoc\\Browser\\Application\\browser.exe
 var startStartIndex = 0;
@@ -168,7 +169,7 @@ function createWindow() {
     });
 
     //dev tool
-    //mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     mainWindow.on('crashed', () => {
         win.destroy();
@@ -618,7 +619,7 @@ function doLogin(_username, _password) {
     concurentLogin = null;
     //đang login
     //C:\\Users\\Admin\\AppData\\Local\\CocCoc\\Browser\\Application\\browser.exe
-    concurentLogin = puppeteer.launch({ args: ["--proxy-server='direct://'", '--proxy-bypass-list=*'], headless: true, ignoreHTTPSErrors: true, executablePath: exPath == "" ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" : exPath }).then(async browser => {
+    concurentLogin = puppeteer.launch({ args: ["--proxy-server='direct://'", '--proxy-bypass-list=*'], headless: true, ignoreHTTPSErrors: true, executablePath: exPath == "" ? "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" : exPath }).then(async browser => {
         mainBrowser = browser;
         pageLogin = await browser.newPage();
 
@@ -900,8 +901,8 @@ async function doCrawl() {
                         currentData.push(dataFromTableHome[33]);
                         nameHeader[2] = dataFromTableHome[32];
                         } else {
-                            canWrite = false;
-                            currentData[1] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
+                            //canWrite = false;
+                            currentData.push(errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
                             //currentData[1] = "";
                         }
                         //await mainWindow.webContents.send(crawlCommand.log, 'header ' + dataFromTableHome[32]);
@@ -957,7 +958,7 @@ async function doCrawl() {
                     if (retryCount == 3) {
                         isPass = false;
                         //await mainWindow.webContents.send(crawlCommand.log, 'elementNoNumberContent ' + elementNoNumberContent);
-                        currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
+                        //currentService.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
                     }
 
 
@@ -985,6 +986,7 @@ async function doCrawl() {
                         }
                     } else {
                         serviceHeader = [...nameDiscount];
+                        currentService.push("...");
                     }
                 }
                 await mainWindow.webContents.send(crawlCommand.log, 'currentService ' + currentService);
@@ -1040,7 +1042,7 @@ async function doCrawl() {
                     }
 
                     if (retryCount == 3) {
-                        currentData.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
+                        //currentDiscount1.push(errorTitle + "-" + NOINFO + " " + inputPhoneNumberArray[index]);
                         isPass = false;
                     }
 
@@ -1058,7 +1060,7 @@ async function doCrawl() {
                     }
 
                     if (retryCount == 3) {
-                        currentData.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
+                        //currentDiscount1.push(errorTitle + "-" + inputPhoneNumberArray[index] + " " + WRONGINFO);
                         isPass = false;
                     }
 
@@ -1085,6 +1087,7 @@ async function doCrawl() {
                             }
                         } else {
                             discountHeader1 = [...nameDiscount];
+
                         }
 
                         //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount1  ' + dataFromTableDiscount1);
@@ -1106,6 +1109,8 @@ async function doCrawl() {
                         //         }
                         //     }
                         // }
+                    } else {
+                        currentDiscount1.push("...");
                     }
                 }
 
@@ -1422,13 +1427,11 @@ async function doCrawl() {
                         }
 
                     }
-                    else {
-                        await mainWindow.webContents.send(crawlCommand.log, 'số  ' + inputPhoneNumberArray[index] + ' bị lỗi ');
-                        //let counterIndexNotFound = index + 1;
-                        //await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + counterIndexNotFound);//số thứ tự
-                        await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + inputPhoneNumberArray[index] + " bị lỗi, không tra cứu");
+                    // else {
+                    //     await mainWindow.webContents.send(crawlCommand.log, 'số  ' + inputPhoneNumberArray[index] + ' bị lỗi ');
+                    //     await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + inputPhoneNumberArray[index] + " bị lỗi, không tra cứu");
 
-                    }
+                    // }
                 }
                 catch (err) {
                     await mainWindow.webContents.send(crawlCommand.log, 'lỗi  ' + err);
