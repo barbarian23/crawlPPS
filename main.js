@@ -52,7 +52,7 @@ var URL = {
     LOGIN: "https://10.156.0.19/Account/Subs_info_120days.aspx",
     HOME: "https://10.156.0.19/Account/Subs_info_120days.aspx",
     SERVICE: "https://10.156.0.19/Account/Data_Packages_new.aspx",
-    DISCOUNT: "https://10.156.0.19/Account/KMCB_2019.aspx",//"https://10.156.0.19/Account/KMCB_HIST.aspx",
+    DISCOUNT: "https://10.156.0.19/Account/KMCB_2019_1.aspx",//"https://10.156.0.19/Account/KMCB_HIST.aspx",
 };
 var ERROR = "Server Error in '/'";
 var NOINFO = "Không có thông tin thuê bao ";
@@ -112,14 +112,14 @@ var nameHeader = [
     "Các gói KM được tham gia (09/2020)", // cần thay đổi
 ]
 var nameDiscount = [
-    "MSISDN",
+    //"MSISDN", -- tạm bỏ
     "Thời gian bắt đầu đăng ký",
     "Gói cước",
     "Loại chu kỳ",
     "Chu kỳ hiện tại",
     "Số lần đã đăng ký trong ngày",
     "Thời gian thay đổi gần nhất",
-    "Thời gian thay hết hạn chu kỳ",
+    "Thời gian thay hết hạn chu kỳ",//-- mới thêm
     "Trạng thái",
     "Action",
 ];
@@ -131,6 +131,7 @@ var nameDiscount = [
 //     "Chu kỳ hiện tại",
 //     "Số lần đã đăng ký trong ngày",
 //     "Thời gian thay đổi gần nhất",
+//     "Thời gian thay hết hạn chu kì", -- mới thêm
 //     "Trạng thái",
 //     "Action",
 // ];
@@ -169,7 +170,7 @@ function createWindow() {
     });
 
     //dev tool
-    mainWindow.webContents.openDevTools();
+    //mainWindow.webContents.openDevTools();
 
     mainWindow.on('crashed', () => {
         win.destroy();
@@ -1437,6 +1438,10 @@ async function doCrawl() {
                     await mainWindow.webContents.send(crawlCommand.log, 'lỗi  ' + err);
                     //await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + counterIndexNotFound);//số thứ tự
                     //currentData[0] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
+                    //currentData.push(errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
+                    unitExcel[curentProcerssingIndex] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
+                    serviceExcel[curentProcerssingIndex] = ""
+                    discountExcel1[curentProcerssingIndex] = "";
                     await writeToXcell(curentProcerssingIndex + rowSpacing, 1, errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
                 }
             }catch (error) {
@@ -1444,6 +1449,9 @@ async function doCrawl() {
                     //await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + counterIndexNotFound);//số thứ tự
                     //currentData[0] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
                     await writeToXcell(curentProcerssingIndex + rowSpacing, 1, errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
+                    unitExcel[curentProcerssingIndex] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
+                    serviceExcel[curentProcerssingIndex] = ""
+                    discountExcel1[curentProcerssingIndex] = "";
                 }
 
             });
