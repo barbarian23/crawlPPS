@@ -52,7 +52,9 @@ var URL = {
     LOGIN: "https://10.156.0.19/Account/Subs_info_120days.aspx",
     HOME: "https://10.156.0.19/Account/Subs_info_120days.aspx",
     SERVICE: "https://10.156.0.19/Account/Data_Packages_new.aspx",
-    DISCOUNT: "https://10.156.0.19/Account/KMCB_2019_1.aspx",//"https://10.156.0.19/Account/KMCB_HIST.aspx",
+    DISCOUNT: "https://10.156.0.19/Account/KMCB_2021.aspx",
+    //"https://10.156.0.19/Account/KMCB_HIST.aspx",
+    //https://10.156.0.19/Account/KMCB_2021.aspx
 };
 var ERROR = "Server Error in '/'";
 var NOINFO = "Không có thông tin thuê bao ";
@@ -95,8 +97,7 @@ var canWrite = true;
 
 var xlStyleError;
 var currentData = [], currentDiscount = [], currentService = [];
-var unitExcel = [
-], discountExcel1 = [], discountExcel2 = [], serviceExcel = [];//là mảng hai chiều chứa danh sách cá unit excel và thuộc tính
+var unitExcel = [], discountExcel1 = [], discountExcel2 = [], serviceExcel = [];//là mảng hai chiều chứa danh sách cá unit excel và thuộc tính
 var discountHeader1 = [], discountHeader2 = [], infoHeader = [], serviceHeader = [], mainHeader = [];
 var currentDiscount1 = [], currentDiscount2 = [];
 var defaultHeader = [
@@ -112,7 +113,7 @@ var nameHeader = [
     "Các gói KM được tham gia (09/2020)", // cần thay đổi
 ]
 var nameDiscount = [
-    //"MSISDN", -- tạm bỏ
+    "MSISDN",
     "Thời gian bắt đầu đăng ký",
     "Gói cước",
     "Loại chu kỳ",
@@ -561,7 +562,7 @@ async function writeToXcell(x, y, title) {
             ws.cell(x, y).string(title).style(xlStyleSmall);
         }
     } catch (e) {
-        await mainWindow.webContents.send(crawlCommand.log, 'error in write excel   ' + e);
+        //await mainWindow.webContents.send(crawlCommand.log, 'error in write excel   ' + e);
     }
     // }
 }
@@ -620,7 +621,7 @@ function doLogin(_username, _password) {
     concurentLogin = null;
     //đang login
     //C:\\Users\\Admin\\AppData\\Local\\CocCoc\\Browser\\Application\\browser.exe
-    concurentLogin = puppeteer.launch({ args: ["--proxy-server='direct://'", '--proxy-bypass-list=*'], headless: true, ignoreHTTPSErrors: true, executablePath: exPath == "" ? "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" : exPath }).then(async browser => {
+    concurentLogin = puppeteer.launch({ args: ['--no-sandbox', "--proxy-server='direct://'", '--proxy-bypass-list=*'], headless: true, ignoreHTTPSErrors: true, executablePath: exPath == "" ? "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" : exPath }).then(async browser => {
         mainBrowser = browser;
         pageLogin = await browser.newPage();
 
@@ -844,7 +845,7 @@ async function doCrawl() {
                     let isPass = true;
 
                     let retryCount = 0;
-                    
+
                     while (isPass && elementNoNumberContent != undefined && retryCount == 3) {
                         if (isPass && elementNoNumberContent != undefined) {
                             if (elementNoNumberContent.length > 0) {
@@ -894,13 +895,13 @@ async function doCrawl() {
                         //         currentData.push(dataFromTableHome[index]);
                         //     }
                         // }
-                        if(dataFromTableHome.length > 0){
-                        currentData.push(dataFromTableHome[5]);
-                        await mainWindow.webContents.send(crawlCommand.log, 'tài khoản chính ' + dataFromTableHome[5]);
-                        currentData.push(dataFromTableHome[23]);
-                        await mainWindow.webContents.send(crawlCommand.log, 'ngày hết han ' + dataFromTableHome[23]);
-                        currentData.push(dataFromTableHome[33]);
-                        nameHeader[2] = dataFromTableHome[32];
+                        if (dataFromTableHome.length > 0) {
+                            currentData.push(dataFromTableHome[5]);
+                            await mainWindow.webContents.send(crawlCommand.log, 'tài khoản chính ' + dataFromTableHome[5]);
+                            currentData.push(dataFromTableHome[23]);
+                            await mainWindow.webContents.send(crawlCommand.log, 'ngày hết han ' + dataFromTableHome[23]);
+                            currentData.push(dataFromTableHome[33]);
+                            nameHeader[2] = dataFromTableHome[32];
                         } else {
                             //canWrite = false;
                             currentData.push(errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
@@ -908,6 +909,8 @@ async function doCrawl() {
                         }
                         //await mainWindow.webContents.send(crawlCommand.log, 'header ' + dataFromTableHome[32]);
                         //await mainWindow.webContents.send(crawlCommand.log, 'các gói khuyến mại được tham gia ' + dataFromTableHome[33]);
+                    } else {
+                        currentData.push(errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
                     }
                 }
                 //await mainWindow.webContents.send(crawlCommand.log, 'currentData ' + currentData);
@@ -985,9 +988,12 @@ async function doCrawl() {
                                 currentCollumn = 0;
                             }
                         }
+                        if(dataFromTableService.length == 0){
+                            currentService.push(errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
+                        }
                     } else {
                         serviceHeader = [...nameDiscount];
-                        currentService.push("...");
+                        currentService.push(errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
                     }
                 }
                 await mainWindow.webContents.send(crawlCommand.log, 'currentService ' + currentService);
@@ -1005,8 +1011,16 @@ async function doCrawl() {
                     await timer(sleepBetwwenMain);
 
                     let dataFromTableDiscount1 = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView1 tr td", tableData => tableData.map((td) => {
+                        console.log("td", td, "td innerHTML", td.innerHTML);
                         return td.innerHTML;
                     }));
+
+                    // let tt = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView1", tableData => tableData.map((td) => {
+                    //     return td.innerHTML;
+                    // }));
+
+
+                    // await mainWindow.webContents.send(crawlCommand.log, 'tt  ' + tt);
 
                     //bỏ qua bảng thứ 2
                     // let dataFromTableDiscount2 = await pageLogin.$$eval("body #ctl01 .page .main #wrapper #MainContent_GridView2 tr td", tableData => tableData.map((td) => {
@@ -1086,9 +1100,12 @@ async function doCrawl() {
                                     break;
                                 }
                             }
+                            if(dataFromTableDiscount1.length == 0){
+                                currentDiscount1.push(errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
+                            }
                         } else {
                             discountHeader1 = [...nameDiscount];
-
+                            currentDiscount1.push(errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
                         }
 
                         //await mainWindow.webContents.send(crawlCommand.log, 'dataFromTableDiscount1  ' + dataFromTableDiscount1);
@@ -1118,9 +1135,9 @@ async function doCrawl() {
                 //await mainWindow.webContents.send(crawlCommand.log, 'currentDiscount ' + currentDiscount);
                 //await mainWindow.webContents.send(crawlCommand.log, 'discountHeader ' + discountHeader);
                 //==========================================================================
-                //if (thongtin) {
-                unitExcel.push([...currentData]);
-                //}
+                if (thongtin) {
+                    unitExcel.push([...currentData]);
+                }
                 if (data) {
                     serviceExcel.push([...currentService]);
                 }
@@ -1361,16 +1378,18 @@ async function doCrawl() {
                             //await mainWindow.webContents.send(crawlCommand.log, 'serviceExcel ' + serviceExcel[j].length);
                             //await mainWindow.webContents.send(crawlCommand.log, 'discountExcel ' + discountExcel[j].length);
                             //await mainWindow.webContents.send(crawlCommand.log, 'write unit');
-                            unitExcel[j].forEach(async (item, index) => {
-                                indexCurrent++;//await writeToXcell(index + rowSpacing, 1, index + 1);
-                                //await mainWindow.webContents.send(crawlCommand.log, 'index inside unitExcel ' + indexCurrent);
-                                if (item == "&nbsp;") {
-                                    await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), noneName);
-                                } else {
-                                    await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), item);
-                                }
-                                //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào excel unit ' + (j + rowSpacing) + " " + Number.parseInt(indexCurrent) + " " + item);
-                            });
+                            if (thongtin) {
+                                unitExcel[j].forEach(async (item, index) => {
+                                    indexCurrent++;//await writeToXcell(index + rowSpacing, 1, index + 1);
+                                    //await mainWindow.webContents.send(crawlCommand.log, 'index inside unitExcel ' + indexCurrent);
+                                    if (item == "&nbsp;") {
+                                        await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), noneName);
+                                    } else {
+                                        await writeToXcell((j + rowSpacing), Number.parseInt(indexCurrent), item);
+                                    }
+                                    //await mainWindow.webContents.send(crawlCommand.log, 'ghi vào excel unit ' + (j + rowSpacing) + " " + Number.parseInt(indexCurrent) + " " + item);
+                                });
+                            }
                             //await mainWindow.webContents.send(crawlCommand.log, 'write service '+serviceExcel[j].length);
                             if (data) {
                                 serviceExcel[j].forEach(async (item, index) => {
@@ -1439,22 +1458,38 @@ async function doCrawl() {
                     //await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + counterIndexNotFound);//số thứ tự
                     //currentData[0] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
                     //currentData.push(errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
-                    unitExcel[curentProcerssingIndex] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
-                    serviceExcel[curentProcerssingIndex] = ""
-                    discountExcel1[curentProcerssingIndex] = "";
-                    await writeToXcell(curentProcerssingIndex + rowSpacing, 1, errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
+                    let errorInffo = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi không tra cứu" + err;
+                    if (thongtin) {
+                        unitExcel[curentProcerssingIndex] = [errorInffo];
+                    }
+                    if (data) {
+                        serviceExcel[curentProcerssingIndex] = [errorInffo];
+                    }
+
+                    if (khuyenmai) {
+                        discountExcel1[curentProcerssingIndex] = [errorInffo];
+                    }
+                    await writeToXcell(curentProcerssingIndex + rowSpacing, 1, errorInffo);
                 }
-            }catch (error) {
-                    await mainWindow.webContents.send(crawlCommand.log, 'lỗi  ' + error);
-                    //await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + counterIndexNotFound);//số thứ tự
-                    //currentData[0] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
-                    await writeToXcell(curentProcerssingIndex + rowSpacing, 1, errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu");
-                    unitExcel[curentProcerssingIndex] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
-                    serviceExcel[curentProcerssingIndex] = ""
-                    discountExcel1[curentProcerssingIndex] = "";
+            } catch (error) {
+                await mainWindow.webContents.send(crawlCommand.log, 'lỗi  ' + error);
+                //await writeToXcell(index + rowSpacing, 1, errorTitle + "-" + counterIndexNotFound);//số thứ tự
+                //currentData[0] = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi, không tra cứu";
+                let errorInffo = errorTitle + "-" + inputPhoneNumberArray[curentProcerssingIndex] + " bị lỗi không tra cứu" + error;
+                await writeToXcell(curentProcerssingIndex + rowSpacing, 1, errorInffo);
+                if (thongtin) {
+                    unitExcel[curentProcerssingIndex] = [errorInffo];
+                }
+                if (data) {
+                    serviceExcel[curentProcerssingIndex] = [errorInffo];
                 }
 
-            });
+                if (khuyenmai) {
+                    discountExcel1[curentProcerssingIndex] = [errorInffo];
+                }
+            }
+
+        });
 
         await mainWindow.webContents.send(crawlCommand.log, 'end  ');
         await mainWindow.webContents.send(crawlCommand.log, 'write to excel  ');
