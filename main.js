@@ -49,8 +49,8 @@ var isRewrite = false;//quyeest ddinhj khi
 let sleepBetwwenMain = 1000;
 const gotTheLock = app.requestSingleInstanceLock(); //singleton
 var URL = {
-    LOGIN: "https://10.156.0.19/Account/Subs_info_120days.aspx",
-    HOME: "https://10.156.0.19/Account/Subs_info_120days.aspx",
+    LOGIN: "https://10.156.0.19/Account/Subs_info.aspx",
+    HOME: "https://10.156.0.19/Account/Subs_info.aspx",
     SERVICE: "https://10.156.0.19/Account/Data_Packages_new.aspx",
     DISCOUNT: "https://10.156.0.19/Account/KMCB_2021.aspx",
     //"https://10.156.0.19/Account/KMCB_HIST.aspx",
@@ -409,7 +409,7 @@ async function prepareExxcel(callback) {
         },
     });
 
-    fileNamexlxs = "(" + cTimee.getHours() + " Gio -" + cTimee.getMinutes() + " Phut Ngay " + cTimee.getDate() + " Thang " + (cTimee.getMonth() + 1) + " Nam " + cTimee.getFullYear() + ")   " + fileNametxt;
+    fileNamexlxs = "(" + cTimee.getHours() + " Gio -" + cTimee.getMinutes() + " Phut Ngay " + cTimee.getDate() + " Thang " + (cTimee.getMonth() + 1) + " Nam " + cTimee.getFullYear() + "z" + cTimee.getTime() + ")   " + fileNametxt;
     /*
     let header = [
         "STT",
@@ -621,7 +621,7 @@ function doLogin(_username, _password) {
     concurentLogin = null;
     //đang login
     //C:\\Users\\Admin\\AppData\\Local\\CocCoc\\Browser\\Application\\browser.exe
-    concurentLogin = puppeteer.launch({ args: ['--no-sandbox', "--proxy-server='direct://'", '--proxy-bypass-list=*'], headless: true, ignoreHTTPSErrors: true, executablePath: exPath == "" ? "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe" : exPath }).then(async browser => {
+    concurentLogin = puppeteer.launch({ args: ['--no-sandbox', "--proxy-server='direct://'", '--proxy-bypass-list=*'], headless: true, ignoreHTTPSErrors: true, executablePath: exPath == "" ? "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe" : exPath }).then(async browser => {
         mainBrowser = browser;
         pageLogin = await browser.newPage();
 
@@ -665,7 +665,7 @@ function doLogin(_username, _password) {
 
 
         //ngăn race condition
-        await Promise.all([pageLogin.click('body #ctl01 .page .main .accountInfo #MainContent_LoginUser_LoginButton'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+        await Promise.all([pageLogin.click('body #ctl01 .page .main .accountInfo #MainContent_LoginUser_LoginButton1'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
 
 
         //đợi 1 vài giây
@@ -711,6 +711,10 @@ function doLogin(_username, _password) {
 
             //đăng nhập thành công
             await mainWindow.webContents.send(crawlCommand.loginSuccess, 1);
+
+            await pageLogin.goto(URL.LOGIN);
+
+            await timer(sleepBetwwenMain);
         }
 
         //crawl data
@@ -743,6 +747,9 @@ async function doCrawl() {
     canWrite = true;
     //await page.goto(crawlUrl);
     //await mainWindow.webContents.send(crawlCommand.log, 'bắt đầu crawl ');
+
+     //đợi 1 vài giây
+     //await driver.waitForFunction('document.readyState === "complete"');
 
     unitExcel = [...Array(0)];
     discountExcel1 = [...Array(0)];
@@ -812,7 +819,7 @@ async function doCrawl() {
                 await pageLogin.goto(URL.HOME);
                 //nhập vào số điện thoại
                 await pageLogin.$eval('body #ctl01 .page .main #query .msisdn #MainContent_msisdn', (el, value) => el.value = value, element);
-                await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
+                await Promise.all([pageLogin.click('body #ctl01 .page .main #query #MainContent_submit_button2'), pageLogin.waitForNavigation({ waitUntil: 'networkidle0' })]);
 
                 //await page.waitForFunction("document.querySelector('.wrapper') && document.querySelector('.wrapper').clientHeight != 0");
                 await timer(sleepBetwwenMain);
